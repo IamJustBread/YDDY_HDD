@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+        }
+
+        .container {
+            margin-top: 50px;
+        }
+
+        #map { height: 1080px; }
+
+        #calculateButton {
+            width: 100%;
+            margin-top: 20px;
+            margin-bottom: 40px;
+            background-color: #3e8ed0;
+            border-color: transparent;
+            color: #fff;
+        }
+
+        #calculateButton:disabled {
+            background-color: rgb(38, 103, 157);
+            border-color: transparent;
+            color: rgb(232, 230, 227);
+        }
+    </style>
+    <title>YDDY HDD</title>
+</head>
+<body>
+
+<div class="container">
+    <h2>Калькулятор взрывотехника</h2>
+
+    <div class="form-group">
+        <label for="contentType">Выберите тип вещества:</label>
+        <select class="form-control" id="contentType">
+            <!-- Здесь добавьте опции для выбора типа содержимого -->
+        </select>
+    </div>
+
+    <!-- Выбор размеров предмета -->
+    <div class="form-group">
+        <label for="dimensions">Выберите размеры предмета:</label>
+        <div class="input-group">
+            <input type="number" class="form-control" id="height" placeholder="Высота">
+            <input type="number" class="form-control" id="width" placeholder="Ширина">
+            <input type="number" class="form-control" id="depth" placeholder="Глубина">
+            <select class="form-control" id="dimensionUnit">
+                <option value="sm">Сантиметры</option>
+                <option value="inch">Дюймы</option>
+            </select>
+        </div>
+        <small id="dimensionConversion" class="form-text text-muted"></small>
+    </div>
+
+    <!-- Выбор веса -->
+    <div class="form-group">
+        <label for="weight">Выберите вес:</label>
+        <div class="input-group">
+            <input type="number" class="form-control" id="weight" placeholder="Вес">
+            <select class="form-control" id="weightUnit">
+                <option value="gram">Граммы</option>
+                <option value="oz">Унции</option>
+            </select>
+        </div>
+        <small id="weightConversion" class="form-text text-muted"></small>
+    </div>
+
+    <div class="form-group">
+        <label for="trotylEquivalent">Тротиловый эквивалент:</label>
+        <input type="text" class="form-control" id="trotylEquivalent" readonly>
+    </div>
+
+    <button id="calculateButton" type="button" class="btn btn-primary" disabled>Рассчитать</button>
+
+    <!-- Кастомная карта -->
+    <div class="form-group">
+        <div id="map"></div>
+    </div>
+
+
+    <script>
+        const southWest = L.latLng(51.49, -0.14),
+            northEast = L.latLng(51.52, -0.1),
+            bounds = L.latLngBounds(southWest, northEast);
+
+        const map = L.map('map', {
+            center: [51.505, -0.12],
+            zoom: 17, // Начальный уровень приближения
+            minZoom: 16, // Максимальный уровень приближения
+            maxZoom: 20, // Минимальный уровень приближения
+            maxBounds: bounds,  // Границы карты
+            doubleClickZoom: false, // Отключаем приближение по двойному клику
+        });
+
+        let marker;
+
+        L.imageOverlay('static/map.jpg', bounds).addTo(map);
+
+        map.on("click", function (e) {
+            if (marker){
+                marker.setLatLng(e.latlng);
+            } else {
+                marker = L.marker(e.latlng).addTo(map);
+            }
+        });
+
+    </script>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const contentTypeSelect = document.getElementById('contentType');
+        async function loadContentTypes() {
+            try {
+                const response = await fetch('/api/contenttypes');
+                const data = await response.json();
+
+                // Очищаем текущие опции в выпадающем списке
+                contentTypeSelect.innerHTML = '';
+
+                // Добавляем пустой элемент для первой опции
+                const emptyOption = document.createElement('option');
+                emptyOption.value = '';
+                emptyOption.textContent = 'Выберите тип содержимого';
+                contentTypeSelect.appendChild(emptyOption);
+
+                // Заполняем выпадающий список данными из API
+                data.forEach(contentType => {
+                    const option = document.createElement('option');
+                    option.value = contentType.id;
+                    option.textContent = contentType.substance_name;
+                    option.setAttribute('data-density', contentType.density);
+                    option.setAttribute('data-tnt-equivalent', contentType.tnt_equivalent);
+                    contentTypeSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading content types:', error.message);
+            }
+        }
+
+        loadContentTypes();
+
+        // Ссылки на элементы DOM
+        const heightInput = document.getElementById('height');
+        const widthInput = document.getElementById('width');
+        const depthInput = document.getElementById('depth');
+        const dimensionUnitSelect = document.getElementById('dimensionUnit');
+        const dimensionConversion = document.getElementById('dimensionConversion');
+
+        const weightInput = document.getElementById('weight');
+        const weightUnitSelect = document.getElementById('weightUnit');
+        const weightConversion = document.getElementById('weightConversion');
+        const calculateButton = document.getElementById('calculateButton');
+        let radius = 0;
+        const radiusRadio = 13.25;
+
+        function isRequiredInfoPresent() {
+            const selectedSubstanceId  = contentTypeSelect.value;
+            const hasWeight = parseFloat(weightInput.value) > 0;
+            const hasDimensions = parseFloat(heightInput.value) > 0 && parseFloat(widthInput.value) > 0 && parseFloat(depthInput.value) > 0;
+            const hasMarker = marker !== undefined;
+
+            return selectedSubstanceId && (hasWeight || hasDimensions) && hasMarker;
+        }
+
+        function updateCalculateButtonState() {
+            const isActive = isRequiredInfoPresent();
+            calculateButton.disabled = !isActive;
+        }
+        let circle;
+        let circleRadio;
+        calculateButton.addEventListener('click', function (){
+            let trotylEquivalentValues = calculateTrotylEquivalent().trotylEquivalentValue;
+            if(!isRequiredInfoPresent()){
+                alert('Пожалуйста, введите все необходимые данные перед расчетом.');
+                return;
+            }
+            trotylEquivalentValues = (trotylEquivalentValues * 28.3495) / 1000;
+            radius = (320 * Math.pow(trotylEquivalentValues, 1/6) * 3.28084) / 11.28;
+            console.log(radius)
+            if (radius !== 0) {
+                if (circle) {
+                    circle.setLatLng(marker.getLatLng());
+                    circle.setRadius(radius);
+                    circle.bindTooltip('Радиус поражения: ' + (radius * 11.28).toFixed(2) + ' ft', {permanent: true, direction: 'right', offset: [100, -100], pane: 'tooltipPane'});
+                } else {
+                    circle = L.circle(marker.getLatLng(), {
+                        color: 'red',
+                        fillColor: '#f03',
+                        fillOpacity: 0.5,
+                        radius: radius,
+                        pane: 'overlayPane'
+                    }).addTo(map);
+                    circle.bindTooltip('Радиус поражения: ' + (radius * 11.28).toFixed(2) + ' ft', {permanent: true, direction: 'right', offset: [100, -100], pane: 'tooltipPane'});
+                }
+                if (circleRadio) {
+                    circleRadio.setLatLng(marker.getLatLng());
+                    circleRadio.setRadius(radiusRadio);
+                    circleRadio.bindTooltip('Зона радиомолчания', {permanent: true, direction: 'right', pane: 'tooltipPane'});
+                } else {
+                    circleRadio = L.circle(marker.getLatLng(), {
+                        color: 'yellow',
+                        fillColor: '#e0c611',
+                        fillOpacity: 0.5,
+                        radius: radiusRadio
+                    }).addTo(map);
+                    circleRadio.bindTooltip('Зона радиомолчания', {permanent: true, direction: 'right', pane: 'tooltipPane'});
+                }
+            }
+        });
+
+        contentTypeSelect.addEventListener('change', updateCalculateButtonState);
+        weightInput.addEventListener('input', updateCalculateButtonState);
+        heightInput.addEventListener('input', updateCalculateButtonState);
+        widthInput.addEventListener('input', updateCalculateButtonState);
+        depthInput.addEventListener('input', updateCalculateButtonState);
+        map.on('click', updateCalculateButtonState);
+
+        updateCalculateButtonState();
+
+        function updateTrotylEquivalent() {
+            const trotylEquivalentValues = calculateTrotylEquivalent();
+            const trotylEquivalentInput = document.getElementById('trotylEquivalent');
+
+            if (trotylEquivalentValues) {
+                const { trotylEquivalentValue, trotylEquivalentInPounds, weightInOunces } = trotylEquivalentValues;
+                trotylEquivalentInput.value = `${trotylEquivalentValue} oz (${trotylEquivalentInPounds} lb)`;
+                weightConversion.textContent = `(${weightInOunces.toFixed(2)} oz)`;
+            } else {
+                trotylEquivalentInput.value = '';
+                weightConversion.textContent = '';
+            }
+        }
+
+        function calculateTrotylEquivalent() {
+            // Получение выбранных значений
+            const selectedSubstance = contentTypeSelect.value;
+            const weight = parseFloat(weightInput.value) || 0;
+            const height = parseFloat(heightInput.value) || 0;
+            const width = parseFloat(widthInput.value) || 0;
+            const depth = parseFloat(depthInput.value) || 0;
+            const dimensionUnit = dimensionUnitSelect.value;
+            const selectedOption = contentTypeSelect.options[contentTypeSelect.selectedIndex];
+
+            // Проверка на наличие всех необходимых значений
+            if (!selectedSubstance || (!weight && (!height || !width || !depth))) {
+                return null; // Возвращаем null, если не хватает данных для расчета
+            }
+
+            // Получаем данные из атрибутов выбранной опции
+            const density = parseFloat(selectedOption.getAttribute('data-density')) || 0;
+            const tntEquivalent = parseFloat(selectedOption.getAttribute('data-tnt-equivalent')) || 0;
+
+            // Конвертация размеров в сантиметры, если выбраны дюймы
+            const metersToInches = 2.54;
+            const convertedHeight = dimensionUnit === 'inch' ? height / metersToInches : height;
+            const convertedWidth = dimensionUnit === 'inch' ? width / metersToInches : width;
+            const convertedDepth = dimensionUnit === 'inch' ? depth / metersToInches : depth;
+
+            // Рассчитываем объем в кубических сантиметрах
+            const volumeCm3 = convertedHeight * convertedWidth * convertedDepth;
+
+            const calculatedWeight = volumeCm3 * density;
+
+            // Рассчитываем массу в граммах
+            const weightInGrams = weightUnitSelect.value === 'oz' ? weight * 28.3495 : weight;
+
+            const SelectedWeight = weight ? weightInGrams : calculatedWeight;
+
+            // Рассчитываем тротиловый эквивалент
+            const trotylEquivalentValue = (tntEquivalent * SelectedWeight) / 28.3495;
+
+            const trotylEquivalentInPounds = trotylEquivalentValue / 16;
+
+            return {
+                trotylEquivalentValue: trotylEquivalentValue.toFixed(2),
+                trotylEquivalentInPounds: trotylEquivalentInPounds.toFixed(2),
+            };
+        }
+
+        updateTrotylEquivalent();
+
+        // Функция для обновления конверсии размеров
+        function updateDimensionConversion() {
+            const metersToFeet = 0.393701; // Коэффициент для конверсии метров в футы
+            const dimensionUnit = dimensionUnitSelect.value;
+            const height = parseFloat(heightInput.value) || 0;
+            const width = parseFloat(widthInput.value) || 0;
+            const depth = parseFloat(depthInput.value) || 0;
+
+            let convertedHeight = height;
+            let convertedWidth = width;
+            let convertedDepth = depth;
+
+            if (dimensionUnit === 'sm') {
+                convertedHeight = (height / metersToFeet).toFixed(2);
+                convertedWidth = (width / metersToFeet).toFixed(2);
+                convertedDepth = (depth / metersToFeet).toFixed(2);
+            }
+
+            dimensionConversion.textContent = `(${convertedHeight} inch x ${convertedWidth} inch x ${convertedDepth} inch)`;
+        }
+
+        // Функция для обновления конверсии веса
+        function updateWeightConversion() {
+            const kgToPound = 28.3495; // Коэффициент для конверсии килограммов в фунты
+            const weightUnit = weightUnitSelect.value;
+            const weight = parseFloat(weightInput.value) || 0;
+
+            let convertedWeight = weight;
+
+            if (weightUnit === 'gram') {
+                convertedWeight = (weight / kgToPound).toFixed(2);
+            }
+
+            weightConversion.textContent = `(${convertedWeight} oz)`;
+        }
+
+        // Обработчики событий для элементов
+        heightInput.addEventListener('input', updateDimensionConversion);
+        widthInput.addEventListener('input', updateDimensionConversion);
+        depthInput.addEventListener('input', updateDimensionConversion);
+        dimensionUnitSelect.addEventListener('change', updateDimensionConversion);
+        dimensionUnitSelect.addEventListener('change', updateTrotylEquivalent);
+
+        weightInput.addEventListener('input', updateWeightConversion);
+        weightUnitSelect.addEventListener('change', updateWeightConversion);
+        weightUnitSelect.addEventListener('change', updateTrotylEquivalent);
+
+        // Обновляем тротиловый эквивалент
+        updateTrotylEquivalent();
+
+        // Обработчик для изменения типа содержимого
+        contentTypeSelect.addEventListener('change', function () {
+            // Обновляем тротиловый эквивалент при изменении типа содержимого
+            updateTrotylEquivalent();
+            const trotyleEquivalent = calculateTrotylEquivalent()
+            if (trotyleEquivalent) {
+                sendtrotylEquivalentToBackend(trotyleEquivalent.trotylEquivalentValue);
+            }
+        });
+
+        document.getElementById('contentType').addEventListener('change', updateTrotylEquivalent);
+        document.getElementById('weight').addEventListener('input', updateTrotylEquivalent);
+        document.getElementById('height').addEventListener('input', updateTrotylEquivalent);
+        document.getElementById('width').addEventListener('input', updateTrotylEquivalent);
+        document.getElementById('depth').addEventListener('input', updateTrotylEquivalent);
+    });
+</script>
+
+</body>
+</html>
