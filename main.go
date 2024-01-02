@@ -121,23 +121,19 @@ func getContentTypesFromDB() ([]ContentType, error) {
 func getPort() string {
 	port := os.Getenv("PORT")
 	if port != "" {
-		log.Printf("Listening on port %s", port)
 		return fmt.Sprintf(":%s", port)
 	}
-	log.Fatal("$PORT must be set")
-	return ""
+	return ":3000"
 }
 
 func main() {
-	mux := http.NewServeMux()
 	initDB()
-
-	log.Print("Configuring routes")
+	mux := http.NewServeMux()
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	mux.HandleFunc("/", indexHandler)
 	mux.HandleFunc("/api", apiHandler)
 	mux.HandleFunc("/api/contenttypes", apiHandler)
 	mux.HandleFunc("/api/calculate", apiHandler)
-	log.Print("Listening on port")
-	log.Fatal(http.ListenAndServe(getPort(), mux))
+	port := getPort()
+	log.Fatal(http.ListenAndServe(port, mux))
 }
