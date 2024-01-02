@@ -119,7 +119,7 @@ func getContentTypesFromDB() ([]ContentType, error) {
 
 func main() {
 	initDB()
-	port := os.Getenv("PORT")
+	port := os.Getenv("$PORT")
 
 	if port == "" {
 		log.Fatal("$PORT must be set")
