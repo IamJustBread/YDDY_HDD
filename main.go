@@ -19,11 +19,6 @@ type APIResponse struct {
 	Message string `json:"message"`
 }
 
-type APIResponseWithData struct {
-	Message string      `json:"message"`
-	Data    interface{} `json:"data"`
-}
-
 type DatabaseConfig struct {
 	User string
 	Pass string
@@ -52,7 +47,10 @@ func handleError(w http.ResponseWriter, err error, status int, message string) {
 	log.Printf("[%d] %s: %v", status, message, err)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(APIResponse{Message: message})
+	err = json.NewEncoder(w).Encode(APIResponse{Message: message})
+	if err != nil {
+		return
+	}
 }
 
 func initDB() {
@@ -126,10 +124,6 @@ func getContentTypesFromDB() ([]ContentType, error) {
 
 func main() {
 	initDB()
-	err := godotenv.Load()
-	if err != nil {
-		log.Print("Error loading .env file")
-	}
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -143,7 +137,7 @@ func main() {
 	mux.HandleFunc("/api/contenttypes", apiHandler)
 	mux.HandleFunc("/api/calculate", apiHandler)
 
-	err = http.ListenAndServe(":"+port, mux)
+	err := http.ListenAndServe(":"+port, mux)
 	if err != nil {
 		handleError(nil, err, http.StatusInternalServerError, "Error starting server")
 	}
