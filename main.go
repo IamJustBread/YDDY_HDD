@@ -124,13 +124,13 @@ func getPort() string {
 		log.Printf("Listening on port %s", port)
 		return fmt.Sprintf(":%s", port)
 	}
-	return ":8080"
+	log.Fatal("$PORT must be set")
+	return ""
 }
 
 func main() {
 	mux := http.NewServeMux()
 	initDB()
-	fmt.Fprint(os.Stdout, getPort())
 
 	log.Print("Configuring routes")
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
