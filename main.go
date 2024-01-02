@@ -121,8 +121,8 @@ func getContentTypesFromDB() ([]ContentType, error) {
 func getPort() string {
 	port := os.Getenv("PORT")
 	if port != "" {
-		return fmt.Sprintf(":%s", port)
 		log.Printf("Listening on port %s", port)
+		return fmt.Sprintf(":%s", port)
 	}
 	return ":8080"
 }
