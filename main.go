@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/joho/godotenv"
 	"html/template"
 	"log"
 	"net/http"
@@ -54,13 +53,9 @@ func handleError(w http.ResponseWriter, err error, status int, message string) {
 }
 
 func initDB() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Print("Error loading .env file")
-	}
 	config := loadDatabaseConfig()
 	dbURI := config.User + ":" + config.Pass + "@tcp(" + config.Host + ")/" + config.Name + "?charset=utf8&parseTime=True"
-	db, err = sql.Open("mysql", dbURI)
+	db, err := sql.Open("mysql", dbURI)
 	if err != nil {
 		handleError(nil, err, http.StatusInternalServerError, "Error connecting to database")
 	}
