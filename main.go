@@ -122,19 +122,21 @@ func getPort() string {
 	port := os.Getenv("PORT")
 	if port != "" {
 		return fmt.Sprintf(":%s", port)
+		log.Printf("Listening on port %s", port)
 	}
 	return ":8080"
 }
 
 func main() {
 	initDB()
-
+	log.Print("Starting server")
 	mux := http.NewServeMux()
-
+	log.Print("Configuring routes")
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	mux.HandleFunc("/", indexHandler)
 	mux.HandleFunc("/api", apiHandler)
 	mux.HandleFunc("/api/contenttypes", apiHandler)
 	mux.HandleFunc("/api/calculate", apiHandler)
+	log.Print("Listening on port")
 	log.Fatal(http.ListenAndServe(getPort(), mux))
 }
