@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
 	"html/template"
@@ -130,7 +131,7 @@ func main() {
 	if err != nil {
 		log.Print("Error loading .env file")
 	}
-	port := os.Getenv("PORT")
+	port := fmt.Sprintf(":%s", os.Getenv("PORT"))
 	if port == "" {
 		port = "8080"
 	}
@@ -143,8 +144,5 @@ func main() {
 	mux.HandleFunc("/api/contenttypes", apiHandler)
 	mux.HandleFunc("/api/calculate", apiHandler)
 
-	err = http.ListenAndServe(":"+port, mux)
-	if err != nil {
-		handleError(nil, err, http.StatusInternalServerError, "Error starting server")
-	}
+	log.Fatal(http.ListenAndServe(port, mux))
 }
