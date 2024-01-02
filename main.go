@@ -130,7 +130,7 @@ func getPort() string {
 func main() {
 	mux := http.NewServeMux()
 	initDB()
-	fmt.Printf(getPort())
+	fmt.Fprint(os.Stdout, getPort())
 
 	log.Print("Configuring routes")
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
