@@ -120,8 +120,9 @@ func getContentTypesFromDB() ([]ContentType, error) {
 func main() {
 	initDB()
 	port := os.Getenv("PORT")
+
 	if port == "" {
-		port = "8080"
+		log.Fatal("$PORT must be set")
 	}
 
 	mux := http.NewServeMux()
