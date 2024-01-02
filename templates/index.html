@@ -46,13 +46,12 @@
     <div class="form-group">
         <label for="contentType">Выберите тип вещества:</label>
         <select class="form-control" id="contentType">
-            <!-- Здесь добавьте опции для выбора типа содержимого -->
         </select>
     </div>
 
     <!-- Выбор размеров предмета -->
     <div class="form-group">
-        <label for="dimensions">Выберите размеры предмета:</label>
+        <label for="dimensions">Укажите размеры предмета:</label>
         <div class="input-group">
             <input type="number" class="form-control" id="height" placeholder="Высота">
             <input type="number" class="form-control" id="width" placeholder="Ширина">
@@ -65,9 +64,8 @@
         <small id="dimensionConversion" class="form-text text-muted"></small>
     </div>
 
-    <!-- Выбор веса -->
     <div class="form-group">
-        <label for="weight">Выберите вес:</label>
+        <label for="weight">Укажите вес вещ-ва или предмета:</label>
         <div class="input-group">
             <input type="number" class="form-control" id="weight" placeholder="Вес">
             <select class="form-control" id="weightUnit">
@@ -128,7 +126,8 @@
         async function loadContentTypes() {
             try {
                 const response = await fetch('/api/contenttypes');
-                const data = await response.json();
+                const responseData = await response.json();
+                const data = responseData.data || [];
 
                 // Очищаем текущие опции в выпадающем списке
                 contentTypeSelect.innerHTML = '';
@@ -152,6 +151,8 @@
                 console.error('Error loading content types:', error.message);
             }
         }
+
+
 
         loadContentTypes();
 
@@ -197,7 +198,7 @@
                 if (circle) {
                     circle.setLatLng(marker.getLatLng());
                     circle.setRadius(radius);
-                    circle.bindTooltip('Радиус поражения: ' + (radius * 11.28).toFixed(2) + ' ft', {permanent: true, direction: 'right', offset: [100, -100], pane: 'tooltipPane'});
+                    circle.bindTooltip('Зона эвакуации: ' + (radius * 3.64).toFixed(2) + ' ft', {permanent: true, direction: 'right', offset: [100, -100], pane: 'tooltipPane'});
                 } else {
                     circle = L.circle(marker.getLatLng(), {
                         color: 'red',
@@ -206,7 +207,7 @@
                         radius: radius,
                         pane: 'overlayPane'
                     }).addTo(map);
-                    circle.bindTooltip('Радиус поражения: ' + (radius * 11.28).toFixed(2) + ' ft', {permanent: true, direction: 'right', offset: [100, -100], pane: 'tooltipPane'});
+                    circle.bindTooltip('Зона эвакуации: ' + (radius * 3.64).toFixed(2) + ' ft', {permanent: true, direction: 'right', offset: [100, -100], pane: 'tooltipPane'});
                 }
                 if (circleRadio) {
                     circleRadio.setLatLng(marker.getLatLng());

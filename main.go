@@ -2,19 +2,15 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
-	"fmt"
+	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
-	"html/template"
 	"log"
 	"net/http"
 	"os"
 )
 
 var db *sql.DB
-
-var tpl = template.Must(template.ParseFiles("index.html"))
 
 type APIResponse struct {
 	Message string `json:"message"`
@@ -49,60 +45,63 @@ func loadDatabaseConfig() DatabaseConfig {
 	}
 }
 
-func handleError(w http.ResponseWriter, err error, status int, message string) {
+func handleError(c *gin.Context, err error, status int, message string) {
 	log.Printf("[%d] %s: %v", status, message, err)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(APIResponse{Message: message})
+	c.JSON(status, gin.H{"message": message})
 }
 
-func initDB() {
+func handleDBError(c *gin.Context, err error, message string) {
+	log.Printf("[%d] %s: %v", http.StatusInternalServerError, message, err)
+
+	errorResponse := gin.H{
+		"status":  http.StatusInternalServerError,
+		"message": message,
+	}
+
+	if err != nil {
+		errorResponse["error"] = err.Error()
+	}
+
+	c.JSON(http.StatusInternalServerError, errorResponse)
+}
+
+func initDB() *sql.DB {
 	err := godotenv.Load()
 	if err != nil {
-		log.Print("Error loading .env file")
+		log.Fatal("Error loading .env file")
 	}
 	config := loadDatabaseConfig()
 	dbURI := config.User + ":" + config.Pass + "@tcp(" + config.Host + ")/" + config.Name + "?charset=utf8&parseTime=True"
 	db, err = sql.Open("mysql", dbURI)
 	if err != nil {
-		handleError(nil, err, http.StatusInternalServerError, "Error connecting to database")
+		handleDBError(nil, err, "Error opening database connection")
+		return nil
 	}
+
 	err = db.Ping()
 	if err != nil {
-		handleError(nil, err, http.StatusInternalServerError, "Error connecting to database")
+		handleDBError(nil, err, "Error pinging database")
+		return nil
 	}
 
 	log.Print("Connected to database")
+	return db
 }
 
-func indexHandler(w http.ResponseWriter, r *http.Request) {
-
-	err := tpl.Execute(w, nil)
-	if err != nil {
-		handleError(w, err, http.StatusInternalServerError, "Error executing template")
-	}
-}
-
-func apiHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.URL.Path {
+func apiHandler(c *gin.Context) {
+	switch c.Request.URL.Path {
 	case "/api/contenttypes":
-		// Обработка запроса на получение списка типов содержимого
+		// Processing request to get the list of content types
 		contentTypes, err := getContentTypesFromDB()
 		if err != nil {
-			handleError(w, err, http.StatusInternalServerError, "Error getting content types from database")
+			handleError(c, err, http.StatusInternalServerError, "Error getting content types from database")
 			return
 		}
 
-		// Отправка списка типов содержимого в формате JSON
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		err = json.NewEncoder(w).Encode(contentTypes)
-		if err != nil {
-			handleError(w, err, http.StatusInternalServerError, "Error encoding JSON")
-			return
-		}
+		// Sending the list of content types in JSON format
+		c.JSON(http.StatusOK, contentTypes)
 	default:
-		handleError(w, nil, http.StatusNotFound, "Not found")
+		handleError(c, nil, http.StatusNotFound, "Not found")
 	}
 }
 
@@ -129,20 +128,34 @@ func main() {
 	initDB()
 	err := godotenv.Load()
 	if err != nil {
-		log.Print("Error loading .env file")
+		log.Fatal("Error loading .env file")
 	}
-	port := fmt.Sprintf(":%s", os.Getenv("PORT"))
+	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080"
+		log.Fatal("$PORT must be set")
 	}
 
-	mux := http.NewServeMux()
+	router := gin.New()
+	router.Use(gin.Logger())
+	router.LoadHTMLGlob("templates/*")
+	router.Static("/static", "static")
 
-	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-	mux.HandleFunc("/", indexHandler)
-	mux.HandleFunc("/api", apiHandler)
-	mux.HandleFunc("/api/contenttypes", apiHandler)
-	mux.HandleFunc("/api/calculate", apiHandler)
+	router.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.html", nil)
+	})
 
-	log.Fatal(http.ListenAndServe(port, mux))
+	router.GET("/api/contenttypes", func(c *gin.Context) {
+		contentTypes, err := getContentTypesFromDB()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, APIResponse{Message: "Error getting content types from database"})
+			return
+		}
+
+		c.JSON(http.StatusOK, APIResponseWithData{Message: "OK", Data: contentTypes})
+	})
+
+	router.GET("/api", apiHandler)
+	router.GET("/api/calculate", apiHandler)
+
+	log.Fatal(router.Run(":" + port))
 }
