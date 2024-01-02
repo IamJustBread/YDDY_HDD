@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"html/template"
 	"log"
@@ -120,7 +121,7 @@ func getContentTypesFromDB() ([]ContentType, error) {
 func getPort() string {
 	port := os.Getenv("PORT")
 	if port != "" {
-		return ":" + port
+		return fmt.Sprintf(":%s", port)
 	}
 	return ":8080"
 }
