@@ -2,10 +2,8 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
-	"fmt"
+	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
-	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -13,10 +11,13 @@ import (
 
 var db *sql.DB
 
-var tpl = template.Must(template.ParseFiles("index.html"))
-
 type APIResponse struct {
 	Message string `json:"message"`
+}
+
+type APIResponseWithData struct {
+	Message string      `json:"message"`
+	Data    interface{} `json:"data"`
 }
 
 type DatabaseConfig struct {
@@ -43,59 +44,59 @@ func loadDatabaseConfig() DatabaseConfig {
 	}
 }
 
-func handleError(w http.ResponseWriter, err error, status int, message string) {
+func handleError(c *gin.Context, err error, status int, message string) {
 	log.Printf("[%d] %s: %v", status, message, err)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	err = json.NewEncoder(w).Encode(APIResponse{Message: message})
-	if err != nil {
-		return
-	}
+	c.JSON(status, gin.H{"message": message})
 }
 
-func initDB() {
+func handleDBError(c *gin.Context, err error, message string) {
+	log.Printf("[%d] %s: %v", http.StatusInternalServerError, message, err)
+
+	errorResponse := gin.H{
+		"status":  http.StatusInternalServerError,
+		"message": message,
+	}
+
+	if err != nil {
+		errorResponse["error"] = err.Error()
+	}
+
+	c.JSON(http.StatusInternalServerError, errorResponse)
+}
+
+func initDB() *sql.DB {
 	config := loadDatabaseConfig()
 	dbURI := config.User + ":" + config.Pass + "@tcp(" + config.Host + ")/" + config.Name + "?charset=utf8&parseTime=True"
 	db, err := sql.Open("mysql", dbURI)
 	if err != nil {
-		handleError(nil, err, http.StatusInternalServerError, "Error connecting to database")
+		handleDBError(nil, err, "Error opening database connection")
+		return nil
 	}
+
 	err = db.Ping()
 	if err != nil {
-		handleError(nil, err, http.StatusInternalServerError, "Error connecting to database")
+		handleDBError(nil, err, "Error pinging database")
+		return nil
 	}
 
 	log.Print("Connected to database")
+	return db
 }
 
-func indexHandler(w http.ResponseWriter, r *http.Request) {
-
-	err := tpl.Execute(w, nil)
-	if err != nil {
-		handleError(w, err, http.StatusInternalServerError, "Error executing template")
-	}
-}
-
-func apiHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.URL.Path {
+func apiHandler(c *gin.Context) {
+	switch c.Request.URL.Path {
 	case "/api/contenttypes":
-		// Обработка запроса на получение списка типов содержимого
+		// Processing request to get the list of content types
 		contentTypes, err := getContentTypesFromDB()
 		if err != nil {
-			handleError(w, err, http.StatusInternalServerError, "Error getting content types from database")
+			handleError(c, err, http.StatusInternalServerError, "Error getting content types from database")
 			return
 		}
 
-		// Отправка списка типов содержимого в формате JSON
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		err = json.NewEncoder(w).Encode(contentTypes)
-		if err != nil {
-			handleError(w, err, http.StatusInternalServerError, "Error encoding JSON")
-			return
-		}
+		// Sending the list of content types in JSON format
+		c.JSON(http.StatusOK, contentTypes)
 	default:
-		handleError(w, nil, http.StatusNotFound, "Not found")
+		handleError(c, nil, http.StatusNotFound, "Not found")
 	}
 }
 
@@ -118,22 +119,34 @@ func getContentTypesFromDB() ([]ContentType, error) {
 	return contentTypes, nil
 }
 
-func getPort() string {
-	port := os.Getenv("PORT")
-	if port != "" {
-		return fmt.Sprintf(":%s", port)
-	}
-	return ":3000"
-}
-
 func main() {
 	initDB()
-	mux := http.NewServeMux()
-	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-	mux.HandleFunc("/", indexHandler)
-	mux.HandleFunc("/api", apiHandler)
-	mux.HandleFunc("/api/contenttypes", apiHandler)
-	mux.HandleFunc("/api/calculate", apiHandler)
-	port := getPort()
-	log.Fatal(http.ListenAndServe(port, mux))
+	port := os.Getenv("PORT")
+	if port == "" {
+		log.Fatal("$PORT must be set")
+	}
+
+	router := gin.New()
+	router.Use(gin.Logger())
+	router.LoadHTMLGlob("templates/*")
+	router.Static("/static", "static")
+
+	router.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.html", nil)
+	})
+
+	router.GET("/api/contenttypes", func(c *gin.Context) {
+		contentTypes, err := getContentTypesFromDB()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, APIResponse{Message: "Error getting content types from database"})
+			return
+		}
+
+		c.JSON(http.StatusOK, APIResponseWithData{Message: "OK", Data: contentTypes})
+	})
+
+	router.GET("/api", apiHandler)
+	router.GET("/api/calculate", apiHandler)
+
+	log.Fatal(router.Run(":" + port))
 }
