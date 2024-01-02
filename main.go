@@ -117,15 +117,17 @@ func getContentTypesFromDB() ([]ContentType, error) {
 	return contentTypes, nil
 }
 
+func getPort() string {
+	port := os.Getenv("PORT")
+	if port != "" {
+		return ":" + port
+	}
+	return ":8080"
+}
+
 func main() {
 	initDB()
-	port := os.Getenv("$PORT")
-
-	if port == "" {
-		log.Fatal("$PORT must be set")
-	} else {
-		log.Printf("$PORT was set on" + port)
-	}
+	port := getPort()
 
 	mux := http.NewServeMux()
 
@@ -135,7 +137,7 @@ func main() {
 	mux.HandleFunc("/api/contenttypes", apiHandler)
 	mux.HandleFunc("/api/calculate", apiHandler)
 
-	err := http.ListenAndServe(":"+port, mux)
+	err := http.ListenAndServe(port, mux)
 	if err != nil {
 		handleError(nil, err, http.StatusInternalServerError, "Error starting server")
 	}
