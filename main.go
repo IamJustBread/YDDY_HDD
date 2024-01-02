@@ -127,8 +127,6 @@ func getPort() string {
 
 func main() {
 	initDB()
-	port := getPort()
-	log.Fatal(http.ListenAndServe(port, nil))
 
 	mux := http.NewServeMux()
 
@@ -137,9 +135,5 @@ func main() {
 	mux.HandleFunc("/api", apiHandler)
 	mux.HandleFunc("/api/contenttypes", apiHandler)
 	mux.HandleFunc("/api/calculate", apiHandler)
-
-	err := http.ListenAndServe(port, mux)
-	if err != nil {
-		handleError(nil, err, http.StatusInternalServerError, "Error starting server")
-	}
+	log.Fatal(http.ListenAndServe(getPort(), mux))
 }
