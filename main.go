@@ -128,6 +128,7 @@ func getPort() string {
 func main() {
 	initDB()
 	port := getPort()
+	log.Fatal(http.ListenAndServe(port, nil))
 
 	mux := http.NewServeMux()
 
