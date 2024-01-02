@@ -123,6 +123,8 @@ func main() {
 
 	if port == "" {
 		log.Fatal("$PORT must be set")
+	} else {
+		log.Printf("$PORT was set on" + port)
 	}
 
 	mux := http.NewServeMux()
