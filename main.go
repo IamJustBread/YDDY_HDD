@@ -148,5 +148,5 @@ func main() {
 	router.GET("/api", apiHandler)
 	router.GET("/api/calculate", apiHandler)
 
-	log.Fatal(router.Run(":" + port))
+	log.Fatal(router.Run("0.0.0.0:" + port))
 }
