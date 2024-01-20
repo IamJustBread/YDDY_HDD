@@ -120,11 +120,11 @@ func getContentTypesFromDB() ([]ContentType, error) {
 }
 
 func main() {
-	initDB()
 	port := os.Getenv("PORT")
 	if port == "" {
 		log.Fatal("$PORT must be set")
 	}
+	initDB()
 
 	router := gin.New()
 	router.Use(gin.Logger())
@@ -148,5 +148,5 @@ func main() {
 	router.GET("/api", apiHandler)
 	router.GET("/api/calculate", apiHandler)
 
-	log.Fatal(router.Run("0.0.0.0:" + port))
+	log.Fatal(router.Run(":" + port))
 }
