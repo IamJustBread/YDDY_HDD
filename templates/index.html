@@ -192,13 +192,13 @@
                 return;
             }
             trotylEquivalentValues = (trotylEquivalentValues * 28.3495) / 1000;
-            radius = (320 * Math.pow(trotylEquivalentValues, 1/6) * 3.28084) / 11.28;
+            radius = (150 * Math.pow(trotylEquivalentValues, 1/6) * 3.28084) / 11.28;
             console.log(radius)
             if (radius !== 0) {
                 if (circle) {
                     circle.setLatLng(marker.getLatLng());
                     circle.setRadius(radius);
-                    circle.bindTooltip('Зона эвакуации: ' + (radius * 3.64).toFixed(2) + ' ft', {permanent: true, direction: 'right', offset: [100, -100], pane: 'tooltipPane'});
+                    circle.bindTooltip('Зона эвакуации: ' + (radius * 11.28).toFixed(2) + ' ft', {permanent: true, direction: 'right', offset: [100, -100], pane: 'tooltipPane'});
                 } else {
                     circle = L.circle(marker.getLatLng(), {
                         color: 'red',
@@ -207,7 +207,7 @@
                         radius: radius,
                         pane: 'overlayPane'
                     }).addTo(map);
-                    circle.bindTooltip('Зона эвакуации: ' + (radius * 3.64).toFixed(2) + ' ft', {permanent: true, direction: 'right', offset: [100, -100], pane: 'tooltipPane'});
+                    circle.bindTooltip('Зона эвакуации: ' + (radius * 11.28).toFixed(2) + ' ft', {permanent: true, direction: 'right', offset: [100, -100], pane: 'tooltipPane'});
                 }
                 if (circleRadio) {
                     circleRadio.setLatLng(marker.getLatLng());
