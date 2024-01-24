@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"log"
 	"net/http"
 	"os"
+	"time"
 )
 
 var db *sql.DB
@@ -76,7 +78,7 @@ func initDB(c *gin.Context) {
 
 	err = db.Ping()
 	if err != nil {
-		handleDBError(nil, err, "Error pinging database")
+		handleDBError(c, err, "Error pinging database")
 		return
 	}
 
@@ -87,7 +89,7 @@ func apiHandler(c *gin.Context) {
 	switch c.Request.URL.Path {
 	case "/api/contenttypes":
 		// Processing request to get the list of content types
-		contentTypes, err := getContentTypesFromDB()
+		contentTypes, err := getContentTypesFromDB(nil)
 		if err != nil {
 			handleError(c, err, http.StatusInternalServerError, "Error getting content types from database")
 			return
@@ -100,8 +102,11 @@ func apiHandler(c *gin.Context) {
 	}
 }
 
-func getContentTypesFromDB() ([]ContentType, error) {
-	rows, err := db.Query("SELECT * FROM explosives")
+func getContentTypesFromDB(c *gin.Context) ([]ContentType, error) {
+	ctx, cancel := context.WithTimeout(c, 5*time.Second)
+	defer cancel()
+
+	rows, err := db.QueryContext(ctx, "SELECT * FROM explosives")
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +142,7 @@ func main() {
 	})
 
 	router.GET("/api/contenttypes", func(c *gin.Context) {
-		contentTypes, err := getContentTypesFromDB()
+		contentTypes, err := getContentTypesFromDB(nil)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, APIResponse{Message: "Error getting content types from database"})
 			return
