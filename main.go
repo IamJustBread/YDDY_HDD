@@ -64,23 +64,23 @@ func handleDBError(c *gin.Context, err error, message string) {
 	c.JSON(http.StatusInternalServerError, errorResponse)
 }
 
-func initDB() *sql.DB {
+func initDB(c *gin.Context) {
 	config := loadDatabaseConfig()
 	dbURI := config.User + ":" + config.Pass + "@tcp(" + config.Host + ")/" + config.Name + "?charset=utf8&parseTime=True"
-	db, err := sql.Open("mysql", dbURI)
+	var err error
+	db, err = sql.Open("mysql", dbURI)
 	if err != nil {
-		handleDBError(nil, err, "Error opening database connection")
-		return nil
+		handleDBError(c, err, "Error opening database connection")
+		return
 	}
 
 	err = db.Ping()
 	if err != nil {
 		handleDBError(nil, err, "Error pinging database")
-		return nil
+		return
 	}
 
 	log.Print("Connected to database")
-	return db
 }
 
 func apiHandler(c *gin.Context) {
@@ -101,7 +101,7 @@ func apiHandler(c *gin.Context) {
 }
 
 func getContentTypesFromDB() ([]ContentType, error) {
-	rows, err := db.Query("SELECT id, substance_name, density, detonation_force, tnt_equivalent FROM explosives")
+	rows, err := db.Query("SELECT * FROM explosives")
 	if err != nil {
 		return nil, err
 	}
@@ -124,12 +124,13 @@ func main() {
 	if port == "" {
 		log.Fatal("$PORT must be set")
 	}
-	initDB()
 
 	router := gin.New()
 	router.Use(gin.Logger())
 	router.LoadHTMLGlob("templates/*")
 	router.Static("/static", "static")
+
+	initDB(nil)
 
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", nil)
