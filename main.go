@@ -125,6 +125,7 @@ func getContentTypesFromDB(c *gin.Context) ([]ContentType, error) {
 }
 
 func main() {
+	initDB(nil)
 	port := os.Getenv("PORT")
 	if port == "" {
 		log.Fatal("$PORT must be set")
@@ -134,8 +135,6 @@ func main() {
 	router.Use(gin.Logger())
 	router.LoadHTMLGlob("templates/*")
 	router.Static("/static", "static")
-
-	initDB(nil)
 
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", nil)
