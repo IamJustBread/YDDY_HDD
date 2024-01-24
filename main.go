@@ -103,6 +103,7 @@ func apiHandler(c *gin.Context) {
 }
 
 func getContentTypesFromDB(c *gin.Context) ([]ContentType, error) {
+	fmt.Printf("Getting content types from database")
 	ctx, cancel := context.WithTimeout(c, 5*time.Second)
 	defer cancel()
 
@@ -126,6 +127,7 @@ func getContentTypesFromDB(c *gin.Context) ([]ContentType, error) {
 
 func main() {
 	initDB(nil)
+	fmt.Print("Database connection established")
 	port := os.Getenv("PORT")
 	if port == "" {
 		fmt.Println("$PORT must be set")
