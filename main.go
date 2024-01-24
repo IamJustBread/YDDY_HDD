@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
@@ -103,6 +104,9 @@ func apiHandler(c *gin.Context) {
 }
 
 func getContentTypesFromDB(c *gin.Context) ([]ContentType, error) {
+	if db == nil {
+		return nil, errors.New("database not initialized")
+	}
 	fmt.Printf("Getting content types from database")
 	ctx, cancel := context.WithTimeout(c, 5*time.Second)
 	defer cancel()
@@ -127,6 +131,10 @@ func getContentTypesFromDB(c *gin.Context) ([]ContentType, error) {
 
 func main() {
 	initDB(nil)
+	if db == nil {
+		fmt.Println("Failed to initialize the database.")
+		return
+	}
 	fmt.Print("Database connection established")
 	port := os.Getenv("PORT")
 	if port == "" {
