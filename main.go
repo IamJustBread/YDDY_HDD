@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"log"
@@ -47,12 +48,12 @@ func loadDatabaseConfig() DatabaseConfig {
 }
 
 func handleError(c *gin.Context, err error, status int, message string) {
-	log.Printf("[%d] %s: %v", status, message, err)
+	fmt.Printf("[%d] %s: %v", status, message, err)
 	c.JSON(status, gin.H{"message": message})
 }
 
 func handleDBError(c *gin.Context, err error, message string) {
-	log.Printf("[%d] %s: %v", http.StatusInternalServerError, message, err)
+	fmt.Printf("[%d] %s: %v", http.StatusInternalServerError, message, err)
 
 	errorResponse := gin.H{
 		"status":  http.StatusInternalServerError,
@@ -82,7 +83,6 @@ func initDB(c *gin.Context) {
 		return
 	}
 
-	log.Print("Connected to database")
 }
 
 func apiHandler(c *gin.Context) {
@@ -128,7 +128,7 @@ func main() {
 	initDB(nil)
 	port := os.Getenv("PORT")
 	if port == "" {
-		log.Fatal("$PORT must be set")
+		fmt.Println("$PORT must be set")
 	}
 
 	router := gin.New()
