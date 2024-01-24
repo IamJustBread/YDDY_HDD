@@ -268,7 +268,7 @@
             const tntEquivalent = parseFloat(selectedOption.getAttribute('data-tnt-equivalent')) || 0;
 
             // Конвертация размеров в сантиметры, если выбраны дюймы
-            const metersToInches = 2.54;
+            const metersToInches = 0.39;
             const convertedHeight = dimensionUnit === 'inch' ? height / metersToInches : height;
             const convertedWidth = dimensionUnit === 'inch' ? width / metersToInches : width;
             const convertedDepth = dimensionUnit === 'inch' ? depth / metersToInches : depth;
@@ -309,9 +309,9 @@
             let convertedDepth = depth;
 
             if (dimensionUnit === 'sm') {
-                convertedHeight = (height / metersToFeet).toFixed(2);
-                convertedWidth = (width / metersToFeet).toFixed(2);
-                convertedDepth = (depth / metersToFeet).toFixed(2);
+                convertedHeight = (height * metersToFeet).toFixed(2);
+                convertedWidth = (width * metersToFeet).toFixed(2);
+                convertedDepth = (depth * metersToFeet).toFixed(2);
             }
 
             dimensionConversion.textContent = `(${convertedHeight} inch x ${convertedWidth} inch x ${convertedDepth} inch)`;
