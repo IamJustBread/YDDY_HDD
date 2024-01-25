@@ -79,7 +79,6 @@ func initDB(c *gin.Context) {
 	}
 
 	err = db.Ping()
-	handleDBError(c, err, "PONG")
 	if err != nil {
 		handleDBError(c, err, "Error pinging database")
 		return
