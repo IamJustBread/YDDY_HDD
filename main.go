@@ -64,26 +64,24 @@ func handleDBError(c *gin.Context, err error, message string) {
 	if err != nil {
 		errorResponse["error"] = err.Error()
 	}
-
 	c.JSON(http.StatusInternalServerError, errorResponse)
 }
 
-func initDB(c *gin.Context) {
+func initDB(c *gin.Context) error {
 	config := loadDatabaseConfig()
-	dbURI := config.User + ":" + config.Pass + "@tcp(" + config.Host + ")/" + config.Name + "?charset=utf8&parseTime=True"
+	dbURI := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=True", config.User, config.Pass, config.Host, config.Name)
 	var err error
 	db, err = sql.Open("mysql", dbURI)
 	if err != nil {
-		handleDBError(c, err, "Error opening database connection")
-		return
+		return err
 	}
 
 	err = db.Ping()
 	if err != nil {
-		handleDBError(c, err, "Error pinging database")
-		return
+		return err
 	}
 
+	return nil
 }
 
 func apiHandler(c *gin.Context) {
@@ -105,7 +103,6 @@ func apiHandler(c *gin.Context) {
 
 func getContentTypesFromDB(c *gin.Context) ([]ContentType, error) {
 	if db == nil {
-		handleDBError(c, nil, "Database not initialized")
 		return nil, errors.New("database not initialized")
 	}
 	fmt.Printf("Getting content types from database")
@@ -114,7 +111,6 @@ func getContentTypesFromDB(c *gin.Context) ([]ContentType, error) {
 
 	rows, err := db.QueryContext(ctx, "SELECT * FROM explosives")
 	if err != nil {
-		handleDBError(c, err, "Error querying database")
 		return nil, err
 	}
 	defer rows.Close()
@@ -123,7 +119,6 @@ func getContentTypesFromDB(c *gin.Context) ([]ContentType, error) {
 	for rows.Next() {
 		var contentType ContentType
 		if err := rows.Scan(&contentType.ID, &contentType.SubstanceName, &contentType.Density, &contentType.DetonationForce, &contentType.TntEquivalent); err != nil {
-			handleDBError(c, err, "Error scanning database row")
 			return nil, err
 		}
 		contentTypes = append(contentTypes, contentType)
@@ -133,9 +128,9 @@ func getContentTypesFromDB(c *gin.Context) ([]ContentType, error) {
 }
 
 func main() {
-	initDB(nil)
-	if db == nil {
-		handleDBError(nil, nil, "Database not initialized")
+	err := initDB(nil)
+	if err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
 		return
 	}
 	fmt.Print("Database connection established")
