@@ -105,6 +105,7 @@ func apiHandler(c *gin.Context) {
 
 func getContentTypesFromDB(c *gin.Context) ([]ContentType, error) {
 	if db == nil {
+		handleDBError(c, nil, "Database not initialized")
 		return nil, errors.New("database not initialized")
 	}
 	fmt.Printf("Getting content types from database")
@@ -113,6 +114,7 @@ func getContentTypesFromDB(c *gin.Context) ([]ContentType, error) {
 
 	rows, err := db.QueryContext(ctx, "SELECT * FROM explosives")
 	if err != nil {
+		handleDBError(c, err, "Error querying database")
 		return nil, err
 	}
 	defer rows.Close()
@@ -121,6 +123,7 @@ func getContentTypesFromDB(c *gin.Context) ([]ContentType, error) {
 	for rows.Next() {
 		var contentType ContentType
 		if err := rows.Scan(&contentType.ID, &contentType.SubstanceName, &contentType.Density, &contentType.DetonationForce, &contentType.TntEquivalent); err != nil {
+			handleDBError(c, err, "Error scanning database row")
 			return nil, err
 		}
 		contentTypes = append(contentTypes, contentType)
@@ -132,7 +135,7 @@ func getContentTypesFromDB(c *gin.Context) ([]ContentType, error) {
 func main() {
 	initDB(nil)
 	if db == nil {
-		fmt.Println("Failed to initialize the database.")
+		handleDBError(nil, nil, "Database not initialized")
 		return
 	}
 	fmt.Print("Database connection established")
