@@ -49,12 +49,12 @@ func loadDatabaseConfig() DatabaseConfig {
 }
 
 func handleError(c *gin.Context, err error, status int, message string) {
-	fmt.Printf("[%d] %s: %v", status, message, err)
+	os.Stderr.WriteString(fmt.Sprintf("[%d] %s: %v", status, message, err))
 	c.JSON(status, gin.H{"message": message})
 }
 
 func handleDBError(c *gin.Context, err error, message string) {
-	fmt.Printf("[%d] %s: %v", http.StatusInternalServerError, message, err)
+	os.Stderr.WriteString(fmt.Sprintf("[500] %s: %v", message, err))
 
 	errorResponse := gin.H{
 		"status":  http.StatusInternalServerError,
