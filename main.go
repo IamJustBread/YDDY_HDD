@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -128,15 +127,21 @@ func getContentTypesFromDB(c *gin.Context) ([]ContentType, error) {
 }
 
 func main() {
+	if err := run(); err != nil {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	err := initDB(nil)
 	if err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
-		return
+		return fmt.Errorf("failed to initialize database: %v", err)
 	}
 	fmt.Print("Database connection established")
 	port := os.Getenv("PORT")
 	if port == "" {
-		fmt.Println("$PORT must be set")
+		return errors.New("$PORT must be set")
 	}
 
 	router := gin.New()
@@ -161,5 +166,5 @@ func main() {
 	router.GET("/api", apiHandler)
 	router.GET("/api/calculate", apiHandler)
 
-	log.Fatal(router.Run(":" + port))
+	return router.Run(":" + port)
 }
