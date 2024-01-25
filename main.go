@@ -70,17 +70,20 @@ func initDB(c *gin.Context) error {
 	config := loadDatabaseConfig()
 	dbURI := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=True", config.User, config.Pass, config.Host, config.Name)
 	var err error
-	db, err = sql.Open("mysql", dbURI)
-	if err != nil {
-		return err
+
+	maxAttempts := 10
+	for i := 0; i < maxAttempts; i++ {
+		db, err = sql.Open("mysql", dbURI)
+		if err == nil {
+			err = db.Ping()
+			if err == nil {
+				return nil
+			}
+		}
+		time.Sleep(time.Second * 5)
 	}
 
-	err = db.Ping()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return fmt.Errorf("failed to initialize database: %v", err)
 }
 
 func apiHandler(c *gin.Context) {
