@@ -107,6 +107,7 @@ func main() {
 	initDB()
 
 	router := gin.New()
+	gin.SetMode(gin.ReleaseMode)
 	router.Use(gin.Logger())
 	router.LoadHTMLGlob("templates/*")
 	router.Static("/static", "static")
