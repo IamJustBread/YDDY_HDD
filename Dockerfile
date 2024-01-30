@@ -1,9 +1,6 @@
 # Start from the latest golang base image
 FROM golang:latest
 
-# Add Maintainer Info
-LABEL maintainer="IamJustBread <iamjustbread@example.com>"
-
 # Set the Current Working Directory inside the container
 WORKDIR /app
 
@@ -15,6 +12,9 @@ RUN go mod download
 
 # Build the Go app
 RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o main .
+
+# List the contents of the /app directory
+RUN ls -l
 
 # Expose port 8080 to the outside world
 EXPOSE 8080
