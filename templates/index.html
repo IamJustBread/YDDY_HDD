@@ -21,10 +21,6 @@
 
         #map { height: 1080px; }
 
-        #text-center {
-            text-align: center;
-        }
-
         #calculateButton {
             width: 100%;
             margin-top: 20px;
@@ -75,10 +71,10 @@
     <div class="form-group">
         <label>Укажите размеры предмета:</label>
         <div class="input-group">
-            <input type="number" class="form-control" id="height" placeholder="Высота">
-            <input type="number" class="form-control" id="width" placeholder="Ширина">
-            <input type="number" class="form-control" id="depth" placeholder="Глубина">
-            <select class="form-control" id="dimensionUnit">
+            <label for="height"></label><input type="number" class="form-control" id="height" placeholder="Высота">
+            <label for="width"></label><input type="number" class="form-control" id="width" placeholder="Ширина">
+            <label for="depth"></label><input type="number" class="form-control" id="depth" placeholder="Глубина">
+            <label for="dimensionUnit"></label><select class="form-control" id="dimensionUnit">
                 <option value="sm">Сантиметры</option>
                 <option value="inch">Дюймы</option>
             </select>
@@ -90,7 +86,7 @@
         <label for="weight">Укажите вес вещ-ва или предмета:</label>
         <div class="input-group">
             <input type="number" class="form-control" id="weight" placeholder="Вес">
-            <select class="form-control" id="weightUnit">
+            <label for="weightUnit"></label><select class="form-control" id="weightUnit">
                 <option value="gram">Граммы</option>
                 <option value="oz">Унции</option>
             </select>
