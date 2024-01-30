@@ -35,6 +35,24 @@
             border-color: transparent;
             color: rgb(232, 230, 227);
         }
+
+        #radioZone {
+            margin-top: 10px; /* Adjust the margin as needed */
+            margin-bottom: 10px; /* Adjust the margin as needed */
+        }
+
+        #radioZone + label {
+            font-weight: normal;
+            margin-left: 5px;
+            vertical-align: middle;
+        }
+
+        #radioZone:checked + label:before {
+            content: "\2022";
+            color: #3e8ed0; /* Use the desired color */
+            font-size: 1.5em;
+            margin-right: 5px;
+        }
     </style>
     <title>YDDY HDD</title>
 </head>
@@ -79,6 +97,10 @@
     <div class="form-group">
         <label for="trotylEquivalent">Тротиловый эквивалент:</label>
         <input type="text" class="form-control" id="trotylEquivalent" readonly>
+    </div>
+
+    <div class="form-group">
+        <label for="radioZone"></label><input type="checkbox" checked id="radioZone">Зона радиомолчания
     </div>
 
     <button id="calculateButton" type="button" class="btn btn-primary" disabled>Рассчитать</button>
@@ -167,8 +189,34 @@
         const weightUnitSelect = document.getElementById('weightUnit');
         const weightConversion = document.getElementById('weightConversion');
         const calculateButton = document.getElementById('calculateButton');
+        const radioZone = document.getElementById('radioZone');
         let radius = 0;
         const radiusRadio = 13.25;
+
+        radioZone.addEventListener('change', function () {
+            if (radioZone.checked) {
+                // Если чекбокс отмечен, создаем круговую зону радиомолчания
+                if (circleRadio) {
+                    circleRadio.setLatLng(marker.getLatLng());
+                    circleRadio.setRadius(radiusRadio);
+                    circleRadio.bindTooltip('Зона радиомолчания', { permanent: true, direction: 'right', pane: 'tooltipPane' });
+                } else {
+                    circleRadio = L.circle(marker.getLatLng(), {
+                        color: 'yellow',
+                        fillColor: '#e0c611',
+                        fillOpacity: 0.5,
+                        radius: radiusRadio
+                    }).addTo(map);
+                    circleRadio.bindTooltip('Зона радиомолчания', { permanent: true, direction: 'right', pane: 'tooltipPane' });
+                }
+            } else {
+                // Если чекбокс не отмечен, удаляем круговую зону радиомолчания
+                if (circleRadio) {
+                    map.removeLayer(circleRadio);
+                    circleRadio = undefined;
+                }
+            }
+        });
 
         function isRequiredInfoPresent() {
             const selectedSubstanceId  = contentTypeSelect.value;
@@ -193,7 +241,6 @@
             }
             trotylEquivalentValues = (trotylEquivalentValues * 28.3495) / 1000;
             radius = (150 * Math.pow(trotylEquivalentValues, 1/6) * 3.28084) / 11.28;
-            console.log(radius)
             if (radius !== 0) {
                 if (circle) {
                     circle.setLatLng(marker.getLatLng());
@@ -209,18 +256,20 @@
                     }).addTo(map);
                     circle.bindTooltip('Зона эвакуации: ' + (radius * 11.28).toFixed(2) + ' ft', {permanent: true, direction: 'right', offset: [100, -100], pane: 'tooltipPane'});
                 }
-                if (circleRadio) {
-                    circleRadio.setLatLng(marker.getLatLng());
-                    circleRadio.setRadius(radiusRadio);
-                    circleRadio.bindTooltip('Зона радиомолчания', {permanent: true, direction: 'right', pane: 'tooltipPane'});
-                } else {
-                    circleRadio = L.circle(marker.getLatLng(), {
-                        color: 'yellow',
-                        fillColor: '#e0c611',
-                        fillOpacity: 0.5,
-                        radius: radiusRadio
-                    }).addTo(map);
-                    circleRadio.bindTooltip('Зона радиомолчания', {permanent: true, direction: 'right', pane: 'tooltipPane'});
+                if (radioZone.checked){
+                    if (circleRadio) {
+                        circleRadio.setLatLng(marker.getLatLng());
+                        circleRadio.setRadius(radiusRadio);
+                        circleRadio.bindTooltip('Зона радиомолчания', {permanent: true, direction: 'right', pane: 'tooltipPane'});
+                    } else {
+                        circleRadio = L.circle(marker.getLatLng(), {
+                            color: 'yellow',
+                            fillColor: '#e0c611',
+                            fillOpacity: 0.5,
+                            radius: radiusRadio
+                        }).addTo(map);
+                        circleRadio.bindTooltip('Зона радиомолчания', {permanent: true, direction: 'right', pane: 'tooltipPane'});
+                    }
                 }
             }
         });
