@@ -199,7 +199,7 @@
                 if (circleRadio) {
                     circleRadio.setLatLng(marker.getLatLng());
                     circleRadio.setRadius(radiusRadio);
-                    circleRadio.bindTooltip('Зона радиомолчания', { permanent: true, direction: 'right', pane: 'tooltipPane' });
+                    circleRadio.bindTooltip('Зона радиомолчания', { permanent: true, direction: 'left', pane: 'tooltipPane' });
                 } else {
                     circleRadio = L.circle(marker.getLatLng(), {
                         color: 'yellow',
@@ -207,7 +207,7 @@
                         fillOpacity: 0.5,
                         radius: radiusRadio
                     }).addTo(map);
-                    circleRadio.bindTooltip('Зона радиомолчания', { permanent: true, direction: 'right', pane: 'tooltipPane' });
+                    circleRadio.bindTooltip('Зона радиомолчания', { permanent: true, direction: 'left', pane: 'tooltipPane' });
                 }
             } else {
                 // Если чекбокс не отмечен, удаляем круговую зону радиомолчания
@@ -245,7 +245,7 @@
                 if (circle) {
                     circle.setLatLng(marker.getLatLng());
                     circle.setRadius(radius);
-                    circle.bindTooltip('Зона эвакуации: ' + (radius * 11.28).toFixed(2) + ' ft', {permanent: true, direction: 'right', offset: [100, -100], pane: 'tooltipPane'});
+                    circle.bindTooltip('Зона эвакуации: ' + (radius * 11.28).toFixed(2) + ' ft', {permanent: true, direction: 'right', pane: 'tooltipPane'});
                 } else {
                     circle = L.circle(marker.getLatLng(), {
                         color: 'red',
@@ -254,13 +254,13 @@
                         radius: radius,
                         pane: 'overlayPane'
                     }).addTo(map);
-                    circle.bindTooltip('Зона эвакуации: ' + (radius * 11.28).toFixed(2) + ' ft', {permanent: true, direction: 'right', offset: [100, -100], pane: 'tooltipPane'});
+                    circle.bindTooltip('Зона эвакуации: ' + (radius * 11.28).toFixed(2) + ' ft', {permanent: true, direction: 'right', pane: 'tooltipPane'});
                 }
                 if (radioZone.checked){
                     if (circleRadio) {
                         circleRadio.setLatLng(marker.getLatLng());
                         circleRadio.setRadius(radiusRadio);
-                        circleRadio.bindTooltip('Зона радиомолчания', {permanent: true, direction: 'right', pane: 'tooltipPane'});
+                        circleRadio.bindTooltip('Зона радиомолчания', {permanent: true, direction: 'left', pane: 'tooltipPane'});
                     } else {
                         circleRadio = L.circle(marker.getLatLng(), {
                             color: 'yellow',
@@ -268,7 +268,7 @@
                             fillOpacity: 0.5,
                             radius: radiusRadio
                         }).addTo(map);
-                        circleRadio.bindTooltip('Зона радиомолчания', {permanent: true, direction: 'right', pane: 'tooltipPane'});
+                        circleRadio.bindTooltip('Зона радиомолчания', {permanent: true, direction: 'left', pane: 'tooltipPane'});
                     }
                 }
             }
