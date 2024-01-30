@@ -3,11 +3,9 @@ package main
 import (
 	"database/sql"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"net/http"
-	"os"
 )
 
 const file string = "resource/yddy_hdd_db.db"
@@ -107,14 +105,6 @@ func getContentTypesFromDB() ([]ContentType, error) {
 
 func main() {
 	initDB()
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-	port := os.Getenv("PORT")
-	if port == "" {
-		log.Fatal("$PORT must be set")
-	}
 
 	router := gin.New()
 	router.Use(gin.Logger())
@@ -138,5 +128,5 @@ func main() {
 	router.GET("/api", apiHandler)
 	router.GET("/api/calculate", apiHandler)
 
-	log.Fatal(router.Run(":" + port))
+	log.Fatal(router.Run(":" + "8080"))
 }
