@@ -1,7 +1,8 @@
+version: '4.1'
 services:
-  app:
-    container_name: yddy_hdd
+  yddy_hdd:
     build:
+      context: .
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
