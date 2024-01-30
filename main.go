@@ -3,12 +3,14 @@ package main
 import (
 	"database/sql"
 	"github.com/gin-gonic/gin"
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
+	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"net/http"
 	"os"
 )
+
+const file string = "resource/yddy_hdd_db.db"
 
 var db *sql.DB
 
@@ -36,15 +38,6 @@ type ContentType struct {
 	TntEquivalent   float64 `json:"tnt_equivalent"`
 }
 
-func loadDatabaseConfig() DatabaseConfig {
-	return DatabaseConfig{
-		User: os.Getenv("DB_USER"),
-		Pass: os.Getenv("DB_PASS"),
-		Name: os.Getenv("DB_NAME"),
-		Host: os.Getenv("DB_HOST"),
-	}
-}
-
 func handleError(c *gin.Context, err error, status int, message string) {
 	log.Printf("[%d] %s: %v", status, message, err)
 	c.JSON(status, gin.H{"message": message})
@@ -65,27 +58,14 @@ func handleDBError(c *gin.Context, err error, message string) {
 	c.JSON(http.StatusInternalServerError, errorResponse)
 }
 
-func initDB() *sql.DB {
-	err := godotenv.Load()
+func initDB() error {
+	DB, err := sql.Open("sqlite3", "./resource/yddy_hdd_db.db")
 	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-	config := loadDatabaseConfig()
-	dbURI := config.User + ":" + config.Pass + "@tcp(" + config.Host + ")/" + config.Name + "?charset=utf8&parseTime=True"
-	db, err = sql.Open("mysql", dbURI)
-	if err != nil {
-		handleDBError(nil, err, "Error opening database connection")
-		return nil
+		return err
 	}
 
-	err = db.Ping()
-	if err != nil {
-		handleDBError(nil, err, "Error pinging database")
-		return nil
-	}
-
-	log.Print("Connected to database")
-	return db
+	db = DB
+	return nil
 }
 
 func apiHandler(c *gin.Context) {
@@ -108,6 +88,7 @@ func apiHandler(c *gin.Context) {
 func getContentTypesFromDB() ([]ContentType, error) {
 	rows, err := db.Query("SELECT id, substance_name, density, detonation_force, tnt_equivalent FROM explosives")
 	if err != nil {
+		log.Printf("Error querying database: %v", err)
 		return nil, err
 	}
 	defer rows.Close()
