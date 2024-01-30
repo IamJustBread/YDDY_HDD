@@ -1,13 +1,14 @@
 services:
   app:
+    container_name: yddy_hdd
     build:
-      context: .
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
     volumes:
-      - .:/go/src/app
+      - .:/app
       - ./database:/resources
+    restart: always
     environment:
       - CGO_ENABLED=1
       - PORT=8080
