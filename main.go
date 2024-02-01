@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"database/sql"
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
@@ -11,7 +12,7 @@ import (
 
 const file string = "resource/yddy_hdd_db.db"
 const certFile string = "resource/certificate.crt"
-const keyFile string = "resource/private.pem"
+const keyFile string = "resource/private.key"
 
 var db *sql.DB
 
@@ -99,7 +100,11 @@ func verifyRefererMiddleware(c *gin.Context) {
 
 func main() {
 	initDB()
-
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	config := &tls.Config{Certificates: []tls.Certificate{cert}}
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 	router.Use(gin.Logger())
@@ -123,5 +128,11 @@ func main() {
 	router.GET("/api", apiHandler)
 	router.GET("/api/calculate", apiHandler)
 
-	log.Fatal(router.RunTLS(":"+"443", certFile, keyFile))
+	server := &http.Server{
+		Addr:      ":443",
+		Handler:   router,
+		TLSConfig: config,
+	}
+
+	log.Fatal(server.ListenAndServeTLS("", ""))
 }
