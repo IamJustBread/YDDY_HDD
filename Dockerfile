@@ -12,6 +12,6 @@ COPY . .
 # Build the Go application
 RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o main .
 
-EXPOSE 8080
+EXPOSE 80
 
 CMD ["./main"]
