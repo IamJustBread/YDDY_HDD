@@ -10,8 +10,6 @@ import (
 )
 
 const file string = "resource/yddy_hdd_db.db"
-const certFile string = "resource/certificate.crt"
-const keyFile string = "resource/private.key"
 
 var db *sql.DB
 
@@ -123,5 +121,5 @@ func main() {
 	router.GET("/api", apiHandler)
 	router.GET("/api/calculate", apiHandler)
 
-	log.Fatal(router.RunTLS(":443", certFile, keyFile))
+	log.Fatal(router.Run(":" + "80"))
 }
