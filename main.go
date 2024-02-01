@@ -23,13 +23,6 @@ type APIResponseWithData struct {
 	Data    interface{} `json:"data"`
 }
 
-type DatabaseConfig struct {
-	User string
-	Pass string
-	Name string
-	Host string
-}
-
 type ContentType struct {
 	ID              int     `json:"id"`
 	SubstanceName   string  `json:"substance_name"`
@@ -43,23 +36,8 @@ func handleError(c *gin.Context, err error, status int, message string) {
 	c.JSON(status, gin.H{"message": message})
 }
 
-func handleDBError(c *gin.Context, err error, message string) {
-	log.Printf("[%d] %s: %v", http.StatusInternalServerError, message, err)
-
-	errorResponse := gin.H{
-		"status":  http.StatusInternalServerError,
-		"message": message,
-	}
-
-	if err != nil {
-		errorResponse["error"] = err.Error()
-	}
-
-	c.JSON(http.StatusInternalServerError, errorResponse)
-}
-
 func initDB() error {
-	DB, err := sql.Open("sqlite3", "./resource/yddy_hdd_db.db")
+	DB, err := sql.Open("sqlite3", file)
 	if err != nil {
 		return err
 	}
@@ -106,8 +84,11 @@ func getContentTypesFromDB() ([]ContentType, error) {
 }
 
 func main() {
-	initDB()
-	err := godotenv.Load()
+	err := initDB()
+	if err != nil {
+		return
+	}
+	err = godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
