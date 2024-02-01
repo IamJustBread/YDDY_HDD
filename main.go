@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 const file string = "resource/yddy_hdd_db.db"
@@ -83,6 +84,19 @@ func getContentTypesFromDB() ([]ContentType, error) {
 	return contentTypes, nil
 }
 
+func verifyRefererMiddleware(c *gin.Context) {
+	referer := c.Request.Header.Get("Referer")
+	allowedDomain := "localhost:8080"
+
+	if !strings.Contains(referer, allowedDomain) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Доступ запрещен"})
+		c.Abort()
+		return
+	}
+
+	c.Next()
+}
+
 func main() {
 	err := initDB()
 	if err != nil {
@@ -106,7 +120,7 @@ func main() {
 		c.HTML(http.StatusOK, "index.html", nil)
 	})
 
-	router.GET("/api/contenttypes", func(c *gin.Context) {
+	router.GET("/api/contenttypes", verifyRefererMiddleware, func(c *gin.Context) {
 		contentTypes, err := getContentTypesFromDB()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, APIResponse{Message: "Error getting content types from database"})
