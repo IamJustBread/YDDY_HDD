@@ -6,6 +6,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"net/http"
+	"strings"
 )
 
 const file string = "resource/yddy_hdd_db.db"
