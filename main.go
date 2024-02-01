@@ -21,13 +21,6 @@ type APIResponseWithData struct {
 	Data    interface{} `json:"data"`
 }
 
-type DatabaseConfig struct {
-	User string
-	Pass string
-	Name string
-	Host string
-}
-
 type ContentType struct {
 	ID              int     `json:"id"`
 	SubstanceName   string  `json:"substance_name"`
@@ -41,23 +34,8 @@ func handleError(c *gin.Context, err error, status int, message string) {
 	c.JSON(status, gin.H{"message": message})
 }
 
-func handleDBError(c *gin.Context, err error, message string) {
-	log.Printf("[%d] %s: %v", http.StatusInternalServerError, message, err)
-
-	errorResponse := gin.H{
-		"status":  http.StatusInternalServerError,
-		"message": message,
-	}
-
-	if err != nil {
-		errorResponse["error"] = err.Error()
-	}
-
-	c.JSON(http.StatusInternalServerError, errorResponse)
-}
-
 func initDB() error {
-	DB, err := sql.Open("sqlite3", "./resource/yddy_hdd_db.db")
+	DB, err := sql.Open("sqlite3", file)
 	if err != nil {
 		return err
 	}
@@ -103,11 +81,24 @@ func getContentTypesFromDB() ([]ContentType, error) {
 	return contentTypes, nil
 }
 
+func verifyRefererMiddleware(c *gin.Context) {
+	referer := c.Request.Header.Get("Referer")
+	allowedDomain := "bmath.ru"
+
+	if !strings.Contains(referer, allowedDomain) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Доступ запрещен"})
+		c.Abort()
+		return
+	}
+
+	c.Next()
+}
+
 func main() {
 	initDB()
 
-	router := gin.New()
 	gin.SetMode(gin.ReleaseMode)
+	router := gin.New()
 	router.Use(gin.Logger())
 	router.LoadHTMLGlob("templates/*")
 	router.Static("/static", "static")
@@ -116,7 +107,7 @@ func main() {
 		c.HTML(http.StatusOK, "index.html", nil)
 	})
 
-	router.GET("/api/contenttypes", func(c *gin.Context) {
+	router.GET("/api/contenttypes", verifyRefererMiddleware, func(c *gin.Context) {
 		contentTypes, err := getContentTypesFromDB()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, APIResponse{Message: "Error getting content types from database"})
