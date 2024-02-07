@@ -3,11 +3,9 @@ package main
 import (
 	"database/sql"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 )
 
@@ -102,20 +100,13 @@ func main() {
 	if err != nil {
 		return
 	}
-	err = godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-	port := os.Getenv("PORT")
-	if port == "" {
-		log.Fatal("$PORT must be set")
-	}
+	port := "8080"
 
 	router := gin.New()
 	router.Use(gin.Logger())
 	router.LoadHTMLGlob("templates/*")
+	router.StaticFile("/favicon.ico", "static/favicon.ico")
 	router.Static("/static", "static")
-
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", nil)
 	})
