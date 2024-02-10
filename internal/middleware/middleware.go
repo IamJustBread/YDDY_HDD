@@ -8,7 +8,7 @@ import (
 
 func VerifyRefererMiddleware(c *gin.Context) {
 	referer := c.Request.Header.Get("Referer")
-	allowedDomain := "localhost:8080"
+	allowedDomain := "bmath.ru"
 
 	if !strings.Contains(referer, allowedDomain) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Доступ запрещен"})
