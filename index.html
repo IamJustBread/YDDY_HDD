@@ -1,432 +1,150 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-          crossorigin=""/>
-    <link rel="icon" href="/favicon.ico?" type="image/x-icon">
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-            crossorigin=""></script>
-    <style>
-        body {
-            font-family: 'Arial', sans-serif;
-        }
-
-        .container {
-            margin-top: 50px;
-        }
-
-        #map { height: 1080px; }
-
-        #calculateButton {
-            width: 100%;
-            margin-top: 20px;
-            margin-bottom: 40px;
-            background-color: #3e8ed0;
-            border-color: transparent;
-            color: #fff;
-        }
-
-        #calculateButton:disabled {
-            background-color: rgb(38, 103, 157);
-            border-color: transparent;
-            color: rgb(232, 230, 227);
-        }
-
-        #radioZone {
-            margin-top: 10px; /* Adjust the margin as needed */
-            margin-bottom: 10px; /* Adjust the margin as needed */
-        }
-
-        #radioZone + label {
-            font-weight: normal;
-            margin-left: 5px;
-            vertical-align: middle;
-        }
-
-        #radioZone:checked + label:before {
-            content: "\2022";
-            color: #3e8ed0; /* Use the desired color */
-            font-size: 1.5em;
-            margin-right: 5px;
-        }
-    </style>
-    <title>YDDY HDD</title>
+    <title>Калькулятор взрывотехника - YDDY HDD</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💥</text></svg>">
 </head>
 <body>
-
-<div class="container">
-    <h2>Калькулятор взрывотехника</h2>
-
-    <div class="form-group">
-        <label for="contentType">Выберите тип вещества:</label>
-        <select class="form-control" id="contentType">
-        </select>
-    </div>
-
-    <!-- Выбор размеров предмета -->
-    <div class="form-group">
-        <label>Укажите размеры предмета:</label>
-        <div class="input-group">
-            <label for="height"></label><input type="number" class="form-control" id="height" placeholder="Высота">
-            <label for="width"></label><input type="number" class="form-control" id="width" placeholder="Ширина">
-            <label for="depth"></label><input type="number" class="form-control" id="depth" placeholder="Глубина">
-            <label for="dimensionUnit"></label><select class="form-control" id="dimensionUnit">
-                <option value="sm">Сантиметры</option>
-                <option value="inch">Дюймы</option>
-            </select>
-        </div>
-        <small id="dimensionConversion" class="form-text text-muted"></small>
-    </div>
-
-    <div class="form-group">
-        <label for="weight">Укажите вес вещ-ва или предмета:</label>
-        <div class="input-group">
-            <input type="number" class="form-control" id="weight" placeholder="Вес">
-            <label for="weightUnit"></label><select class="form-control" id="weightUnit">
-                <option value="gram">Граммы</option>
-                <option value="oz">Унции</option>
-            </select>
-        </div>
-        <small id="weightConversion" class="form-text text-muted"></small>
-    </div>
-
-    <div class="form-group">
-        <label for="trotylEquivalent">Тротиловый эквивалент:</label>
-        <input type="text" class="form-control" id="trotylEquivalent" readonly>
-    </div>
-
-    <div class="form-group">
-        <label for="radioZone"></label><input type="checkbox" checked id="radioZone">Зона радиомолчания
-    </div>
-
-    <button id="calculateButton" type="button" class="btn btn-primary" disabled>Рассчитать</button>
-
-    <!-- Кастомная карта -->
-    <div class="form-group">
-        <div id="map"></div>
-    </div>
-
-
-    <script>
-        const southWest = L.latLng(51.49, -0.14),
-            northEast = L.latLng(51.52, -0.1),
-            bounds = L.latLngBounds(southWest, northEast);
-
-        const map = L.map('map', {
-            center: [51.505, -0.12],
-            zoom: 17, // Начальный уровень приближения
-            minZoom: 16, // Максимальный уровень приближения
-            maxZoom: 20, // Минимальный уровень приближения
-            maxBounds: bounds,  // Границы карты
-            doubleClickZoom: false, // Отключаем приближение по двойному клику
-        });
-
-        let marker;
-
-        L.imageOverlay('static/map.jpg', bounds).addTo(map);
-
-        map.on("click", function (e) {
-            if (marker){
-                marker.setLatLng(e.latlng);
-            } else {
-                marker = L.marker(e.latlng).addTo(map);
-            }
-        });
-
-    </script>
-</div>
-
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const contentTypeSelect = document.getElementById('contentType');
-        async function loadContentTypes() {
-            try {
-                const response = await fetch('/api/contenttypes');
-                const responseData = await response.json();
-                const data = responseData.data || [];
-
-                // Очищаем текущие опции в выпадающем списке
-                contentTypeSelect.innerHTML = '';
-
-                // Добавляем пустой элемент для первой опции
-                const emptyOption = document.createElement('option');
-                emptyOption.value = '';
-                emptyOption.textContent = 'Выберите тип содержимого';
-                contentTypeSelect.appendChild(emptyOption);
-
-                // Заполняем выпадающий список данными из API
-                data.forEach(contentType => {
-                    const option = document.createElement('option');
-                    option.value = contentType.id;
-                    option.textContent = contentType.substance_name;
-                    option.setAttribute('data-density', contentType.density);
-                    option.setAttribute('data-tnt-equivalent', contentType.tnt_equivalent);
-                    contentTypeSelect.appendChild(option);
-                });
-            } catch (error) {
-                console.error('Error loading content types:', error.message);
-            }
-        }
-
-
-
-        loadContentTypes();
-
-        // Ссылки на элементы DOM
-        const heightInput = document.getElementById('height');
-        const widthInput = document.getElementById('width');
-        const depthInput = document.getElementById('depth');
-        const dimensionUnitSelect = document.getElementById('dimensionUnit');
-        const dimensionConversion = document.getElementById('dimensionConversion');
-
-        const weightInput = document.getElementById('weight');
-        const weightUnitSelect = document.getElementById('weightUnit');
-        const weightConversion = document.getElementById('weightConversion');
-        const calculateButton = document.getElementById('calculateButton');
-        const radioZone = document.getElementById('radioZone');
-        let radius = 0;
-        const radiusRadio = 13.25;
-
-        radioZone.addEventListener('change', function () {
-            if (radioZone.checked) {
-                // Если чекбокс отмечен, создаем круговую зону радиомолчания
-                if (circleRadio) {
-                    circleRadio.setLatLng(marker.getLatLng());
-                    circleRadio.setRadius(radiusRadio);
-                    circleRadio.bindTooltip('Зона радиомолчания', { permanent: true, direction: 'left', pane: 'tooltipPane' });
-                } else {
-                    circleRadio = L.circle(marker.getLatLng(), {
-                        color: 'yellow',
-                        fillColor: '#e0c611',
-                        fillOpacity: 0.5,
-                        radius: radiusRadio
-                    }).addTo(map);
-                    circleRadio.bindTooltip('Зона радиомолчания', { permanent: true, direction: 'left', pane: 'tooltipPane' });
-                }
-            } else {
-                // Если чекбокс не отмечен, удаляем круговую зону радиомолчания
-                if (circleRadio) {
-                    map.removeLayer(circleRadio);
-                    circleRadio = undefined;
-                }
-            }
-        });
-
-        function isRequiredInfoPresent() {
-            const selectedSubstanceId  = contentTypeSelect.value;
-            const hasWeight = parseFloat(weightInput.value) > 0;
-            const hasDimensions = parseFloat(heightInput.value) > 0 && parseFloat(widthInput.value) > 0 && parseFloat(depthInput.value) > 0;
-            const hasMarker = marker !== undefined;
-
-            return selectedSubstanceId && (hasWeight || hasDimensions) && hasMarker;
-        }
-
-        function updateCalculateButtonState() {
-            const isActive = isRequiredInfoPresent();
-            calculateButton.disabled = !isActive;
-        }
-        let circle;
-        let circleRadio;
-        calculateButton.addEventListener('click', function (){
-            let trotylEquivalentValues = calculateTrotylEquivalent().trotylEquivalentValue;
-            if(!isRequiredInfoPresent()){
-                alert('Пожалуйста, введите все необходимые данные перед расчетом.');
-                return;
-            }
-            trotylEquivalentValues = (trotylEquivalentValues * 28.3495) / 1000;
-            radius = (150 * Math.pow(trotylEquivalentValues, 1/6) * 3.28084) / 11.28;
-            if (radius !== 0) {
-                if (circle) {
-                    circle.setLatLng(marker.getLatLng());
-                    circle.setRadius(radius);
-                    circle.bindTooltip('Зона эвакуации: ' + (radius * 11.28).toFixed(2) + ' ft', {permanent: true, direction: 'right', pane: 'tooltipPane'});
-                } else {
-                    circle = L.circle(marker.getLatLng(), {
-                        color: 'red',
-                        fillColor: '#f03',
-                        fillOpacity: 0.5,
-                        radius: radius,
-                        pane: 'overlayPane'
-                    }).addTo(map);
-                    circle.bindTooltip('Зона эвакуации: ' + (radius * 11.28).toFixed(2) + ' ft', {permanent: true, direction: 'right', pane: 'tooltipPane'});
-                }
-                if (radioZone.checked){
-                    if (circleRadio) {
-                        circleRadio.setLatLng(marker.getLatLng());
-                        circleRadio.setRadius(radiusRadio);
-                        circleRadio.bindTooltip('Зона радиомолчания', {permanent: true, direction: 'left', pane: 'tooltipPane'});
-                    } else {
-                        circleRadio = L.circle(marker.getLatLng(), {
-                            color: 'yellow',
-                            fillColor: '#e0c611',
-                            fillOpacity: 0.5,
-                            radius: radiusRadio
-                        }).addTo(map);
-                        circleRadio.bindTooltip('Зона радиомолчания', {permanent: true, direction: 'left', pane: 'tooltipPane'});
-                    }
-                }
-            }
-        });
-
-        contentTypeSelect.addEventListener('change', updateCalculateButtonState);
-        weightInput.addEventListener('input', updateCalculateButtonState);
-        heightInput.addEventListener('input', updateCalculateButtonState);
-        widthInput.addEventListener('input', updateCalculateButtonState);
-        depthInput.addEventListener('input', updateCalculateButtonState);
-        map.on('click', updateCalculateButtonState);
-
-        updateCalculateButtonState();
-
-        function updateTrotylEquivalent() {
-            const trotylEquivalentValues = calculateTrotylEquivalent();
-            const trotylEquivalentInput = document.getElementById('trotylEquivalent');
-
-            if (trotylEquivalentValues) {
-                const { trotylEquivalentValue, trotylEquivalentInPounds, weightInOunces } = trotylEquivalentValues;
-                trotylEquivalentInput.value = `${trotylEquivalentValue} oz (${trotylEquivalentInPounds} lb)`;
-                weightConversion.textContent = `(${weightInOunces.toFixed(2)} oz)`;
-            } else {
-                trotylEquivalentInput.value = '';
-                weightConversion.textContent = '';
-            }
-        }
-
-        function calculateTrotylEquivalent() {
-            // Получение выбранных значений
-            const selectedSubstance = contentTypeSelect.value;
-            const weight = parseFloat(weightInput.value) || 0;
-            const height = parseFloat(heightInput.value) || 0;
-            const width = parseFloat(widthInput.value) || 0;
-            const depth = parseFloat(depthInput.value) || 0;
-            const dimensionUnit = dimensionUnitSelect.value;
-            const selectedOption = contentTypeSelect.options[contentTypeSelect.selectedIndex];
-
-            // Проверка на наличие всех необходимых значений
-            if (!selectedSubstance || (!weight && (!height || !width || !depth))) {
-                return null; // Возвращаем null, если не хватает данных для расчета
-            }
-
-            // Получаем данные из атрибутов выбранной опции
-            const density = parseFloat(selectedOption.getAttribute('data-density')) || 0;
-            const tntEquivalent = parseFloat(selectedOption.getAttribute('data-tnt-equivalent')) || 0;
-
-            // Конвертация размеров в сантиметры, если выбраны дюймы
-            const metersToInches = 0.39;
-            const convertedHeight = dimensionUnit === 'inch' ? height / metersToInches : height;
-            const convertedWidth = dimensionUnit === 'inch' ? width / metersToInches : width;
-            const convertedDepth = dimensionUnit === 'inch' ? depth / metersToInches : depth;
-
-            // Рассчитываем объем в кубических сантиметрах
-            const volumeCm3 = convertedHeight * convertedWidth * convertedDepth;
-
-            const calculatedWeight = volumeCm3 * density;
-
-            // Рассчитываем массу в граммах
-            const weightInGrams = weightUnitSelect.value === 'oz' ? weight * 28.3495 : weight;
-
-            const SelectedWeight = weight ? weightInGrams : calculatedWeight;
-
-            // Рассчитываем тротиловый эквивалент
-            const trotylEquivalentValue = (tntEquivalent * SelectedWeight) / 28.3495;
-
-            const trotylEquivalentInPounds = trotylEquivalentValue / 16;
-
-            return {
-                trotylEquivalentValue: trotylEquivalentValue.toFixed(2),
-                trotylEquivalentInPounds: trotylEquivalentInPounds.toFixed(2),
-            };
-        }
-
-        updateTrotylEquivalent();
-
-        // Функция для обновления конверсии размеров
-        function updateDimensionConversion() {
-            const metersToFeet = 0.393701; // Коэффициент для конверсии метров в футы
-            const dimensionUnit = dimensionUnitSelect.value;
-            const height = parseFloat(heightInput.value) || 0;
-            const width = parseFloat(widthInput.value) || 0;
-            const depth = parseFloat(depthInput.value) || 0;
-
-            let convertedHeight = height;
-            let convertedWidth = width;
-            let convertedDepth = depth;
-
-            if (dimensionUnit === 'sm') {
-                convertedHeight = (height * metersToFeet).toFixed(2);
-                convertedWidth = (width * metersToFeet).toFixed(2);
-                convertedDepth = (depth * metersToFeet).toFixed(2);
-            }
-
-            dimensionConversion.textContent = `(${convertedHeight} inch x ${convertedWidth} inch x ${convertedDepth} inch)`;
-        }
-
-        // Функция для обновления конверсии веса
-        function updateWeightConversion() {
-            const kgToPound = 28.3495; // Коэффициент для конверсии килограммов в фунты
-            const weightUnit = weightUnitSelect.value;
-            const weight = parseFloat(weightInput.value) || 0;
-
-            let convertedWeight = weight;
-
-            if (weightUnit === 'gram') {
-                convertedWeight = (weight / kgToPound).toFixed(2);
-            }
-
-            weightConversion.textContent = `(${convertedWeight} oz)`;
-        }
-
-        // Обработчики событий для элементов
-        heightInput.addEventListener('input', updateDimensionConversion);
-        widthInput.addEventListener('input', updateDimensionConversion);
-        depthInput.addEventListener('input', updateDimensionConversion);
-        dimensionUnitSelect.addEventListener('change', updateDimensionConversion);
-        dimensionUnitSelect.addEventListener('change', updateTrotylEquivalent);
-
-        weightInput.addEventListener('input', updateWeightConversion);
-        weightUnitSelect.addEventListener('change', updateWeightConversion);
-        weightUnitSelect.addEventListener('change', updateTrotylEquivalent);
-
-        // Обновляем тротиловый эквивалент
-        updateTrotylEquivalent();
-
-        // Обработчик для изменения типа содержимого
-        contentTypeSelect.addEventListener('change', function () {
-            // Обновляем тротиловый эквивалент при изменении типа содержимого
-            updateTrotylEquivalent();
-            const trotyleEquivalent = calculateTrotylEquivalent()
-            if (trotyleEquivalent) {
-                sendtrotylEquivalentToBackend(trotyleEquivalent.trotylEquivalentValue);
-            }
-        });
-
-        document.getElementById('contentType').addEventListener('change', updateTrotylEquivalent);
-        document.getElementById('weight').addEventListener('input', updateTrotylEquivalent);
-        document.getElementById('height').addEventListener('input', updateTrotylEquivalent);
-        document.getElementById('width').addEventListener('input', updateTrotylEquivalent);
-        document.getElementById('depth').addEventListener('input', updateTrotylEquivalent);
-    });
-</script>
-
-</body>
-<footer>
+<header class="header">
     <div class="container">
-        <div class="row">
-            <div class="col-md-12">
-                <div class="text-center">
-                    <a href="https://yrp.life/apply/">© 2024 YDDY:RP</a>
-                </div>
-                <div class="text-center">
-                    <a href="https://github.com/IamJustBread">Ivan Suev</a>
-                </div>
+        <h1>Калькулятор взрывотехника</h1>
+        <p class="header-subtitle">Расчет тротилового эквивалента и зон безопасности</p>
+    </div>
+</header>
+
+<main class="main-content container">
+    <section class="calculator-section">
+        <h2>Параметры расчета</h2>
+
+        <div class="form-group">
+            <label for="contentType">Тип вещества:</label>
+            <select id="contentType" class="form-control">
+                <option value="">Выберите тип вещества</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Размеры предмета:</label>
+            <div class="dimensions-input">
+                <input type="number" id="height" class="form-control" placeholder="Высота" min="0" step="0.1">
+                <input type="number" id="width" class="form-control" placeholder="Ширина" min="0" step="0.1">
+                <input type="number" id="depth" class="form-control" placeholder="Глубина" min="0" step="0.1">
+                <select id="dimensionUnit" class="form-control">
+                    <option value="sm">См</option>
+                    <option value="inch">Дюймы</option>
+                </select>
+            </div>
+            <small id="dimensionConversion" class="conversion-text"></small>
+        </div>
+
+        <div class="form-group">
+            <label for="weight">Вес вещества:</label>
+            <div class="weight-input">
+                <input type="number" id="weight" class="form-control" placeholder="Вес" min="0" step="0.1">
+                <select id="weightUnit" class="form-control">
+                    <option value="gram">Граммы</option>
+                    <option value="oz">Унции</option>
+                </select>
+            </div>
+            <small id="weightConversion" class="conversion-text"></small>
+        </div>
+
+        <div class="form-group">
+            <label for="trotylEquivalent">Тротиловый эквивалент:</label>
+            <input type="text" id="trotylEquivalent" class="form-control" readonly>
+        </div>
+
+        <div class="form-group checkbox-group">
+            <input type="checkbox" id="radioZone" checked>
+            <label for="radioZone">Зона радиомолчания</label>
+        </div>
+
+        <div class="button-group">
+            <button id="calculateButton" class="btn btn-primary" disabled>Рассчитать зоны безопасности</button>
+            <button id="clearTableButton" class="btn btn-secondary">Очистить историю</button>
+        </div>
+    </section>
+
+    <section class="map-section">
+        <h2>Карта расположения</h2>
+        <div id="map"></div>
+        <div class="map-legend">
+            <div class="legend-item">
+                <span class="legend-color evacuation-zone"></span>
+                <span>Зона эвакуации</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color radio-zone"></span>
+                <span>Зона радиомолчания</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="history-section">
+        <h2>История расчетов</h2>
+        <div class="table-container">
+            <table class="history-table">
+                <thead>
+                <tr>
+                    <th>№</th>
+                    <th>Тип вещества</th>
+                    <th>Вес (г)</th>
+                    <th>Тротил. экв. (oz)</th>
+                    <th>Радиус эвакуации (м)</th>
+                    <th>Дата расчета</th>
+                    <th>Действия</th>
+                </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                </tbody>
+            </table>
+            <p class="empty-table-message" id="emptyTableMessage">Нет записей в истории. Выполните расчет, чтобы добавить первую запись.</p>
+        </div>
+        <div class="table-controls">
+            <button id="exportTableButton" class="btn btn-secondary">Экспорт в CSV</button>
+            <button id="highlightRecentButton" class="btn btn-secondary">Подсветить последние 5</button>
+        </div>
+    </section>
+
+    <section class="info-section">
+        <h3>Справочная информация</h3>
+        <div class="info-grid">
+            <div class="info-card">
+                <h4>Тротиловый эквивалент</h4>
+                <p>Мера энерговыделения взрывчатого вещества в эквиваленте массы тротила (тринитротолуола).</p>
+            </div>
+            <div class="info-card">
+                <h4>Зона эвакуации</h4>
+                <p>Область вокруг предполагаемого места взрыва, откуда необходимо эвакуировать людей для обеспечения безопасности.</p>
+            </div>
+            <div class="info-card">
+                <h4>Зона радиомолчания</h4>
+                <p>Область, в которой запрещена работа радиопередающих устройств для предотвращения случайной детонации.</p>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-links">
+                <a href="https://yrp.life/apply/" target="_blank" rel="noopener">© 2024 YDDY:RP</a>
+                <a href="https://github.com/IamJustBread" target="_blank" rel="noopener">Ivan Suev</a>
+            </div>
+            <div class="footer-info">
+                <p>Данный калькулятор предназначен только для использования в рамках РП-ситуаций. Данный сайт не является реальным инструментом и не должен быть использован в реальной жизни</p>
             </div>
         </div>
     </div>
 </footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="js/data.js"></script>
+<script src="js/script.js"></script>
+</body>
 </html>
