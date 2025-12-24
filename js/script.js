@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function() {
             doubleClickZoom: false,
         });
 
-        L.imageOverlay('static/map.jpg', bounds).addTo(map);
+        L.imageOverlay('assets/images/map.jpg', bounds).addTo(map);
 
         map.on('click', function(e) {
             if (marker) {
