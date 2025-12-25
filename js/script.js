@@ -25,6 +25,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const exportTableButton = document.getElementById('exportTableButton');
     const highlightRecentButton = document.getElementById('highlightRecentButton');
     const tableSearch = document.getElementById('tableSearch');
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = themeToggle.querySelector('i');
 
     // Инициализация приложения
     function initApp() {
@@ -34,6 +36,42 @@ document.addEventListener('DOMContentLoaded', function() {
         renderHistoryTable();
         setupEventListeners();
         setupBootstrapComponents();
+        initTheme();
+    }
+
+    // Инициализация темы
+    function initTheme() {
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        if (savedTheme === 'dark') {
+            enableDarkTheme();
+        } else {
+            enableLightTheme();
+        }
+    }
+
+    // Включение темной темы
+    function enableDarkTheme() {
+        document.body.classList.add('dark-theme');
+        themeIcon.className = 'bi bi-sun-fill';
+        themeToggle.title = 'Переключить на светлую тему';
+        localStorage.setItem('theme', 'dark');
+    }
+
+    // Включение светлой темы
+    function enableLightTheme() {
+        document.body.classList.remove('dark-theme');
+        themeIcon.className = 'bi bi-moon-fill';
+        themeToggle.title = 'Переключить на темную тему';
+        localStorage.setItem('theme', 'light');
+    }
+
+    // Переключение темы
+    function toggleTheme() {
+        if (document.body.classList.contains('dark-theme')) {
+            enableLightTheme();
+        } else {
+            enableDarkTheme();
+        }
     }
 
     // Настройка компонентов Bootstrap
@@ -452,6 +490,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Кнопки
         calculateButton.addEventListener('click', calculateExplosion);
         clearFormButton.addEventListener('click', clearForm);
+
+        // Переключение темы
+        themeToggle.addEventListener('click', toggleTheme);
 
         // Управление таблицей
         clearTableButton.addEventListener('click', clearHistory);
