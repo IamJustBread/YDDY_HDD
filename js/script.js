@@ -17,21 +17,41 @@ document.addEventListener('DOMContentLoaded', function() {
     const trotylEquivalentInput = document.getElementById('trotylEquivalent');
     const radioZoneCheckbox = document.getElementById('radioZone');
     const calculateButton = document.getElementById('calculateButton');
+    const clearFormButton = document.getElementById('clearFormButton');
     const historyTableBody = document.getElementById('historyTableBody');
+    const historyCount = document.getElementById('historyCount');
     const emptyTableMessage = document.getElementById('emptyTableMessage');
     const clearTableButton = document.getElementById('clearTableButton');
     const exportTableButton = document.getElementById('exportTableButton');
     const highlightRecentButton = document.getElementById('highlightRecentButton');
+    const tableSearch = document.getElementById('tableSearch');
 
+    // Инициализация приложения
     function initApp() {
         initMap();
         loadContentTypes();
         updateCalculateButtonState();
         renderHistoryTable();
         setupEventListeners();
+        setupBootstrapComponents();
     }
 
-    //Leaflet
+    // Настройка компонентов Bootstrap
+    function setupBootstrapComponents() {
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        window.addEventListener('resize', function() {
+            if (map) {
+                setTimeout(() => {
+                    map.invalidateSize();
+                }, 100);
+            }
+        });
+    }
+
+    // Инициализация карты Leaflet
     function initMap() {
         const southWest = L.latLng(51.49, -0.14);
         const northEast = L.latLng(51.52, -0.1);
@@ -46,13 +66,22 @@ document.addEventListener('DOMContentLoaded', function() {
             doubleClickZoom: false,
         });
 
+        // Добавление фонового изображения карты
         L.imageOverlay('assets/images/map.jpg', bounds).addTo(map);
 
+        // Обработчик клика по карте для установки маркера
         map.on('click', function(e) {
             if (marker) {
                 marker.setLatLng(e.latlng);
             } else {
-                marker = L.marker(e.latlng).addTo(map);
+                marker = L.marker(e.latlng, {
+                    icon: L.divIcon({
+                        className: 'custom-marker',
+                        html: '<i class="bi bi-geo-alt-fill text-danger fs-4"></i>',
+                        iconSize: [32, 32],
+                        iconAnchor: [16, 32]
+                    })
+                }).addTo(map);
             }
             updateCalculateButtonState();
         });
@@ -61,7 +90,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Загрузка типов веществ
     function loadContentTypes() {
         contentTypeSelect.innerHTML = '<option value="">Выберите тип вещества</option>';
-
         explosivesData.forEach(explosive => {
             const option = document.createElement('option');
             option.value = explosive.id;
@@ -72,7 +100,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Проверка наличия данных
+    // Проверка данных для расчета
     function isRequiredInfoPresent() {
         const selectedSubstanceId = contentTypeSelect.value;
         const hasWeight = parseFloat(weightInput.value) > 0;
@@ -80,7 +108,6 @@ document.addEventListener('DOMContentLoaded', function() {
             parseFloat(widthInput.value) > 0 &&
             parseFloat(depthInput.value) > 0;
         const hasMarker = marker !== undefined;
-
         return selectedSubstanceId && (hasWeight || hasDimensions) && hasMarker;
     }
 
@@ -88,23 +115,24 @@ document.addEventListener('DOMContentLoaded', function() {
         calculateButton.disabled = !isRequiredInfoPresent();
     }
 
-    // Функция расчета
+    // Ррасчет
     function calculateExplosion() {
         if (!isRequiredInfoPresent()) {
-            alert('Пожалуйста, заполните все необходимые данные перед расчетом.');
+            showAlert('Пожалуйста, заполните все необходимые данные перед расчетом.', 'warning');
             return;
         }
         const trotylResult = calculateTrotylEquivalent();
-        if (!trotylResult) return;
+        if (!trotylResult) {
+            showAlert('Ошибка расчета. Проверьте введенные данные.', 'danger');
+            return;
+        }
         const { trotylEquivalentValue, trotylEquivalentInPounds, weightInGrams } = trotylResult;
         trotylEquivalentInput.value = `${trotylEquivalentValue} oz (${trotylEquivalentInPounds} lb)`;
-
-        // Расчет радиуса зоны эвакуации
-        const trotylInKg = (trotylEquivalentValue * 28.3495) / 1000; // Конвертация в кг
+        const trotylInKg = (trotylEquivalentValue * 28.3495) / 1000;
         const evacuationRadiusMeters = (150 * Math.pow(trotylInKg, 1/6) * 3.28084) / 11.28;
         displayZonesOnMap(evacuationRadiusMeters);
 
-        // Добавление записи в историю
+        // Добавление в историю
         addToHistory({
             substanceName: contentTypeSelect.options[contentTypeSelect.selectedIndex].text,
             weight: weightInGrams,
@@ -113,6 +141,7 @@ document.addEventListener('DOMContentLoaded', function() {
             date: new Date().toLocaleString('ru-RU')
         });
         renderHistoryTable();
+        showAlert('Расчет успешно выполнен! Зоны безопасности отображены на карте.', 'success');
     }
 
     // Расчет тротилового эквивалента
@@ -129,17 +158,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         const density = parseFloat(selectedOption.getAttribute('data-density')) || 0;
         const tntEquivalent = parseFloat(selectedOption.getAttribute('data-tnt-equivalent')) || 0;
+        // Конвертация размеров
         const metersToInches = 0.39;
         const convertedHeight = dimensionUnit === 'inch' ? height / metersToInches : height;
         const convertedWidth = dimensionUnit === 'inch' ? width / metersToInches : width;
         const convertedDepth = dimensionUnit === 'inch' ? depth / metersToInches : depth;
+        // Расчет объема
         const volumeCm3 = convertedHeight * convertedWidth * convertedDepth;
         const calculatedWeight = volumeCm3 * density;
+        // Конвертация веса
         const weightInGrams = weightUnitSelect.value === 'oz' ? weight * 28.3495 : weight;
         const finalWeight = weight ? weightInGrams : calculatedWeight;
+        // Расчет тротилового эквивалента
         const trotylEquivalentValue = (tntEquivalent * finalWeight) / 28.3495;
         const trotylEquivalentInPounds = trotylEquivalentValue / 16;
-
         return {
             trotylEquivalentValue: trotylEquivalentValue.toFixed(2),
             trotylEquivalentInPounds: trotylEquivalentInPounds.toFixed(2),
@@ -147,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
-    // Зоны на карте
+    // Отображение зон на карте
     function displayZonesOnMap(evacuationRadius) {
         if (!marker) return;
         const markerLatLng = marker.getLatLng();
@@ -156,30 +188,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Создание круга зоны эвакуации
         evacuationCircle = L.circle(markerLatLng, {
-            color: 'red',
-            fillColor: '#e74c3c',
-            fillOpacity: 0.5,
+            color: '#dc3545',
+            fillColor: '#dc3545',
+            fillOpacity: 0.3,
             radius: evacuationRadius
         }).addTo(map);
         evacuationCircle.bindTooltip(
             `Зона эвакуации: ${(evacuationRadius * 11.28).toFixed(2)} ft`,
-            { permanent: true, direction: 'right' }
+            { permanent: true, direction: 'right', className: 'fw-bold' }
         );
 
         // Создание круга зоны радиомолчания
         if (radioZoneCheckbox.checked) {
             radioCircle = L.circle(markerLatLng, {
-                color: 'yellow',
-                fillColor: '#f1c40f',
-                fillOpacity: 0.5,
+                color: '#ffc107',
+                fillColor: '#ffc107',
+                fillOpacity: 0.3,
                 radius: RADIO_ZONE_RADIUS
             }).addTo(map);
             radioCircle.bindTooltip(
                 'Зона радиомолчания',
-                { permanent: true, direction: 'left' }
+                { permanent: true, direction: 'left', className: 'fw-bold' }
             );
         }
     }
+
 
     function updateDimensionConversion() {
         const metersToFeet = 0.393701;
@@ -187,17 +220,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const height = parseFloat(heightInput.value) || 0;
         const width = parseFloat(widthInput.value) || 0;
         const depth = parseFloat(depthInput.value) || 0;
-
         let convertedHeight = height;
         let convertedWidth = width;
         let convertedDepth = depth;
-
         if (dimensionUnit === 'sm') {
             convertedHeight = (height * metersToFeet).toFixed(2);
             convertedWidth = (width * metersToFeet).toFixed(2);
             convertedDepth = (depth * metersToFeet).toFixed(2);
         }
-
         dimensionConversion.textContent = `(${convertedHeight} inch × ${convertedWidth} inch × ${convertedDepth} inch)`;
         updateCalculateButtonState();
         updateTrotylEquivalentDisplay();
@@ -230,7 +260,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // История
+    // Работа с историей расчетов
     function addToHistory(calculation) {
         calculationHistory.unshift({
             id: Date.now(),
@@ -244,37 +274,44 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function renderHistoryTable() {
         historyTableBody.innerHTML = '';
+        historyCount.textContent = calculationHistory.length;
         if (calculationHistory.length === 0) {
             emptyTableMessage.style.display = 'block';
             return;
         }
         emptyTableMessage.style.display = 'none';
 
-        //Заполнение таблицы
-        calculationHistory.forEach((item, index) => {
+        // Поисковая фильтрация
+        const searchTerm = tableSearch.value.toLowerCase();
+        const filteredHistory = calculationHistory.filter(item =>
+            item.substanceName.toLowerCase().includes(searchTerm) ||
+            item.date.toLowerCase().includes(searchTerm)
+        );
+        filteredHistory.forEach((item, index) => {
             const row = document.createElement('tr');
-
+            row.className = 'fade-in';
             row.innerHTML = `
-                <td>${index + 1}</td>
+                <td class="fw-bold">${index + 1}</td>
                 <td>${item.substanceName}</td>
                 <td>${parseFloat(item.weight).toFixed(2)}</td>
-                <td>${parseFloat(item.trotylEquivalent).toFixed(2)}</td>
-                <td>${parseFloat(item.evacuationRadius).toFixed(2)}</td>
-                <td>${item.date}</td>
+                <td class="fw-bold text-primary">${parseFloat(item.trotylEquivalent).toFixed(2)}</td>
+                <td class="fw-bold text-danger">${parseFloat(item.evacuationRadius).toFixed(2)}</td>
+                <td><small class="text-muted">${item.date}</small></td>
                 <td>
-                    <button class="action-btn delete-btn" data-id="${item.id}">Удалить</button>
+                    <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${item.id}" title="Удалить">
+                        <i class="bi bi-trash"></i>
+                    </button>
                 </td>
             `;
-
             row.addEventListener('click', function(e) {
-                if (!e.target.classList.contains('delete-btn')) {
-                    row.classList.toggle('selected');
+                if (!e.target.closest('.delete-btn')) {
+                    this.classList.toggle('selected-row');
                 }
             });
             historyTableBody.appendChild(row);
         });
 
-        // Обработчики для кнопок удаления
+        // Добавление обработчиков для кнопок удаления
         document.querySelectorAll('.delete-btn').forEach(btn => {
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
@@ -288,20 +325,24 @@ document.addEventListener('DOMContentLoaded', function() {
         calculationHistory = calculationHistory.filter(item => item.id !== id);
         localStorage.setItem('explosionHistory', JSON.stringify(calculationHistory));
         renderHistoryTable();
+        showAlert('Запись удалена из истории', 'info');
     }
 
     function clearHistory() {
-        if (calculationHistory.length === 0 || !confirm('Вы уверены, что хотите очистить всю историю расчетов?')) {
-            return;
+        if (calculationHistory.length === 0) return;
+
+        if (confirm('Вы уверены, что хотите очистить всю историю расчетов?')) {
+            calculationHistory = [];
+            localStorage.removeItem('explosionHistory');
+            renderHistoryTable();
+            showAlert('История расчетов очищена', 'info');
         }
-        calculationHistory = [];
-        localStorage.removeItem('explosionHistory');
-        renderHistoryTable();
     }
 
+    // Экспорт в CSV
     function exportToCSV() {
         if (calculationHistory.length === 0) {
-            alert('Нет данных для экспорта.');
+            showAlert('Нет данных для экспорта', 'warning');
             return;
         }
         const headers = ['№', 'Тип вещества', 'Вес (г)', 'Тротил. экв. (oz)', 'Радиус эвакуации (м)', 'Дата расчета'];
@@ -311,69 +352,91 @@ document.addEventListener('DOMContentLoaded', function() {
                 index + 1,
                 `"${item.substanceName}"`,
                 item.weight,
-                item.trotylEquivalent,
+                item.troтиlEquivalent,
                 item.evacuationRadius,
                 `"${item.date}"`
             ];
             csvRows.push(row.join(','));
         });
-
         const csvContent = csvRows.join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-
         link.setAttribute('href', url);
-        link.setAttribute('download', 'расчеты_взрывотехника.csv');
+        link.setAttribute('download', `расчеты_взрывотехника_${new Date().toISOString().split('T')[0]}.csv`);
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        showAlert('Данные экспортированы в CSV файл', 'success');
     }
 
-    //Подсветка последних 5 рассчётов
+    // Подсветка последних записей
     function highlightRecentCalculations() {
-        document.querySelectorAll('.history-table tbody tr').forEach(row => {
-            row.classList.remove('highlighted');
+        document.querySelectorAll('.historyTableBody tr').forEach(row => {
+            row.classList.remove('highlighted-row');
         });
-        const rows = document.querySelectorAll('.history-table tbody tr');
+        const rows = document.querySelectorAll('#historyTableBody tr');
         const count = Math.min(5, rows.length);
-
         for (let i = 0; i < count; i++) {
-            rows[i].classList.add('highlighted');
+            rows[i].classList.add('highlighted-row');
         }
+        // Автоматическое снятие подсветки через 5 секунд
         setTimeout(() => {
-            document.querySelectorAll('.history-table tbody tr').forEach(row => {
-                row.classList.remove('highlighted');
+            document.querySelectorAll('#historyTableBody tr').forEach(row => {
+                row.classList.remove('highlighted-row');
             });
         }, 5000);
     }
 
+    // Сброс формы
+    function clearForm() {
+        contentTypeSelect.value = '';
+        heightInput.value = '';
+        widthInput.value = '';
+        depthInput.value = '';
+        weightInput.value = '';
+        trotylEquivalentInput.value = '';
+        radioZoneCheckbox.checked = true;
+        if (evacuationCircle) map.removeLayer(evacuationCircle);
+        if (radioCircle) map.removeLayer(radioCircle);
+        if (marker) map.removeLayer(marker);
+        marker = undefined;
+        updateCalculateButtonState();
+        updateTrotylEquivalentDisplay();
+        showAlert('Форма очищена', 'info');
+    }
+
+    // Показать уведомление
+    function showAlert(message, type) {
+        const existingAlert = document.querySelector('.alert-dismissible');
+        if (existingAlert) {
+            existingAlert.remove();
+        }
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+        alert.style.zIndex = '1050';
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alert);
+
+        // Автоматическое скрытие через 5 секунд
+        setTimeout(() => {
+            if (alert.parentNode) {
+                alert.remove();
+            }
+        }, 5000);
+    }
+
+    // Настройка обработчиков событий
     function setupEventListeners() {
+        // Основные элементы формы
         contentTypeSelect.addEventListener('change', function() {
             updateCalculateButtonState();
             updateTrotylEquivalentDisplay();
         });
-
-        // Обработчики для расширения инпутов при вводе
-        const expandableInputs = document.querySelectorAll('.input-expandable');
-        expandableInputs.forEach(input => {
-            input.addEventListener('input', function() {
-                updateDimensionConversion();
-                updateWeightConversion();
-                updateCalculateButtonState();
-            });
-            input.addEventListener('focus', function() {
-                this.style.flexGrow = '2';
-            });
-            input.addEventListener('blur', function() {
-                if (!this.value.trim()) {
-                    this.style.flexGrow = '1';
-                }
-            });
-        });
-
-        // Остальные обработчики
         heightInput.addEventListener('input', updateDimensionConversion);
         widthInput.addEventListener('input', updateDimensionConversion);
         depthInput.addEventListener('input', updateDimensionConversion);
@@ -385,29 +448,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 displayZonesOnMap(evacuationCircle.getRadius());
             }
         });
+
+        // Кнопки
         calculateButton.addEventListener('click', calculateExplosion);
+        clearFormButton.addEventListener('click', clearForm);
+
+        // Управление таблицей
         clearTableButton.addEventListener('click', clearHistory);
         exportTableButton.addEventListener('click', exportToCSV);
         highlightRecentButton.addEventListener('click', highlightRecentCalculations);
-
-        // Обработка изменения ориентации экрана
-        window.addEventListener('resize', function() {
-            if (map) {
-                setTimeout(() => {
-                    map.invalidateSize();
-                }, 100);
-            }
-        });
-
-        // Инициализация при загрузке
-        window.addEventListener('load', function() {
-            if (map) {
-                setTimeout(() => {
-                    map.invalidateSize();
-                }, 300);
+        tableSearch.addEventListener('input', renderHistoryTable);
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && isRequiredInfoPresent()) {
+                calculateExplosion();
             }
         });
     }
 
+    // Запуск приложения
     initApp();
 });
