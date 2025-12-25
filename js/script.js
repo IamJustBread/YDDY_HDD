@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // Добавление фонового изображения карты
-        L.imageOverlay('assets/images/map.jpg', bounds).addTo(map);
+        L.imageOverlay('assets/images/map.webp', bounds).addTo(map);
 
         // Обработчик клика по карте для установки маркера
         map.on('click', function(e) {
