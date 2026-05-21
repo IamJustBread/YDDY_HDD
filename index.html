@@ -3,34 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Калькулятор взрывотехника - YDDY HDD</title>
+    <title>YDDY · Калькулятор взрывотехника</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<nav class="navbar navbar-expand-lg bp-navbar">
     <div class="container">
         <a class="navbar-brand" href="#">
-            <i class="bi bi-calculator me-2"></i>Калькулятор взрывотехника
+            <span class="bp-logo">YDDY<span class="bp-logo-sep">·</span></span>
+            <span class="bp-tagline">DEMOLITION CALC / v2.0</span>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
+            <ul class="navbar-nav ms-auto align-items-lg-center">
                 <li class="nav-item">
-                    <a class="nav-link active" href="#calculator">Калькулятор</a>
+                    <a class="nav-link active" href="#calculator">01 / Расчёт</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#history">История</a>
+                    <a class="nav-link" href="#history">02 / Журнал</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#info">Справка</a>
+                    <a class="nav-link" href="#munitions">03 / Боеприпасы</a>
                 </li>
                 <li class="nav-item">
-                    <button id="themeToggle" class="btn btn-outline-light ms-2" title="Переключить тему">
+                    <a class="nav-link" href="#info">04 / Справка</a>
+                </li>
+                <li class="nav-item">
+                    <button id="themeToggle" class="bp-theme-toggle" title="Переключить тему" aria-label="Toggle theme">
                         <i class="bi bi-moon-fill"></i>
                     </button>
                 </li>
@@ -39,236 +46,279 @@
     </div>
 </nav>
 <main class="container py-4">
-    <header class="text-center mb-5">
-        <h1 class="display-4 fw-bold text-primary">
-            <i class="bi bi-calculator"></i> Калькулятор взрывотехника
-        </h1>
-        <p class="lead text-muted">Расчет тротилового эквивалента и зон безопасности</p>
-    </header>
-    <section id="calculator" class="mb-5">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white">
-                <h2 class="h4 mb-0">
-                    <i class="bi bi-sliders"></i> Параметры расчета
-                </h2>
+    <header class="bp-titleblock mb-5">
+        <div class="bp-titleblock-grid">
+            <div class="bp-titleblock-main">
+                <div class="bp-titleblock-eyebrow">PROJECT YDDY · TECHNICAL DRAWING</div>
+                <h1 class="bp-titleblock-h1">Калькулятор взрывотехника</h1>
+                <p class="bp-titleblock-sub">Расчёт тротилового эквивалента и зон безопасности</p>
             </div>
-            <div class="card-body">
-                <div class="row">
+            <dl class="bp-titleblock-meta">
+                <div><dt>SHEET</dt><dd>01 / 01</dd></div>
+                <div><dt>SCALE</dt><dd>1 : 1</dd></div>
+                <div><dt>UNITS</dt><dd>CM · G · M</dd></div>
+                <div><dt>REV.</dt><dd>2.0</dd></div>
+            </dl>
+        </div>
+    </header>
+
+    <section id="calculator" class="mb-5">
+        <div class="bp-card" data-fig="FIG. 01" data-section="ВХОДНЫЕ ПАРАМЕТРЫ">
+            <header class="bp-card-header">
+                <span class="bp-card-fig">FIG. 01</span>
+                <h2 class="bp-card-title">Входные параметры</h2>
+                <span class="bp-card-meta">SECTION A</span>
+            </header>
+            <div class="bp-card-body">
+                <div class="row g-4">
                     <div class="col-lg-6">
-                        <form id="explosionForm">
-                            <div class="mb-3">
-                                <label for="contentType" class="form-label fw-bold">
-                                    <i class="bi bi-flask"></i> Тип вещества:
+                        <form id="explosionForm" class="bp-form">
+                            <div class="bp-field">
+                                <label for="contentType" class="bp-label">
+                                    <span class="bp-label-num">A1</span> Тип вещества
                                 </label>
-                                <select id="contentType" class="form-select">
-                                    <option value="">Выберите тип вещества</option>
+                                <select id="contentType" class="form-select bp-input">
+                                    <option value="">— выберите —</option>
                                 </select>
+                                <div id="substanceInfo" class="mt-2 d-none"></div>
                             </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">
-                                    <i class="bi bi-rulers"></i> Размеры предмета:
+
+                            <div class="bp-field">
+                                <label class="bp-label">
+                                    <span class="bp-label-num">A2</span> Размеры предмета
                                 </label>
                                 <div class="row g-2">
                                     <div class="col-4">
-                                        <input type="number" id="height" class="form-control" placeholder="Высота" min="0" step="0.1">
-                                        <small class="form-text text-muted">Высота</small>
+                                        <input type="number" id="height" class="form-control bp-input bp-numeric" placeholder="H" min="0" step="0.1">
+                                        <small class="bp-hint">Высота</small>
                                     </div>
                                     <div class="col-4">
-                                        <input type="number" id="width" class="form-control" placeholder="Ширина" min="0" step="0.1">
-                                        <small class="form-text text-muted">Ширина</small>
+                                        <input type="number" id="width" class="form-control bp-input bp-numeric" placeholder="W" min="0" step="0.1">
+                                        <small class="bp-hint">Ширина</small>
                                     </div>
                                     <div class="col-4">
-                                        <input type="number" id="depth" class="form-control" placeholder="Глубина" min="0" step="0.1">
-                                        <small class="form-text text-muted">Глубина</small>
+                                        <input type="number" id="depth" class="form-control bp-input bp-numeric" placeholder="D" min="0" step="0.1">
+                                        <small class="bp-hint">Глубина</small>
                                     </div>
                                 </div>
                                 <div class="mt-2">
-                                    <select id="dimensionUnit" class="form-select">
+                                    <select id="dimensionUnit" class="form-select bp-input">
                                         <option value="sm">Сантиметры</option>
                                         <option value="inch">Дюймы</option>
                                     </select>
                                 </div>
-                                <small id="dimensionConversion" class="form-text text-muted mt-1"></small>
+                                <small id="dimensionConversion" class="bp-hint mt-1"></small>
                             </div>
-                            <div class="mb-3">
-                                <label for="weight" class="form-label fw-bold">
-                                    <i class="bi bi-speedometer2"></i> Вес вещества:
+
+                            <div class="bp-field">
+                                <label for="weight" class="bp-label">
+                                    <span class="bp-label-num">A3</span> Вес вещества
                                 </label>
                                 <div class="input-group">
-                                    <input type="number" id="weight" class="form-control" placeholder="Вес" min="0" step="0.1">
-                                    <select id="weightUnit" class="form-select">
+                                    <input type="number" id="weight" class="form-control bp-input bp-numeric" placeholder="m" min="0" step="0.1">
+                                    <select id="weightUnit" class="form-select bp-input">
                                         <option value="gram">Граммы</option>
                                         <option value="oz">Унции</option>
                                     </select>
                                 </div>
-                                <small id="weightConversion" class="form-text text-muted mt-1"></small>
+                                <small id="weightConversion" class="bp-hint mt-1"></small>
                             </div>
-                            <div class="mb-3">
-                                <label for="trotylEquivalent" class="form-label fw-bold">
-                                    <i class="bi bi-gem"></i> Тротиловый эквивалент:
+
+                            <div class="bp-field">
+                                <label for="trotylEquivalent" class="bp-label">
+                                    <span class="bp-label-num">A4</span> Тротиловый эквивалент
                                 </label>
-                                <input type="text" id="trotylEquivalent" class="form-control bg-light" readonly>
+                                <input type="text" id="trotylEquivalent" class="form-control bp-input bp-readout" readonly placeholder="—">
                             </div>
-                            <div class="mb-4">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="radioZone" checked>
-                                    <label class="form-check-label fw-bold" for="radioZone">
-                                        <i class="bi bi-wifi-off"></i> Зона радиомолчания
-                                    </label>
-                                </div>
+
+                            <div class="bp-field bp-toggle">
+                                <label class="bp-switch">
+                                    <input type="checkbox" id="radioZone" checked>
+                                    <span class="bp-switch-track"><span class="bp-switch-thumb"></span></span>
+                                    <span class="bp-switch-label">
+                                        <span class="bp-label-num">A5</span> Зона радиомолчания
+                                    </span>
+                                </label>
                             </div>
-                            <div class="d-grid gap-2 d-md-flex">
-                                <button id="calculateButton" type="button" class="btn btn-primary btn-lg flex-fill" disabled>
-                                    <i class="bi bi-calculator-fill"></i> Рассчитать зоны безопасности
+
+                            <div class="bp-actions">
+                                <button id="calculateButton" type="button" class="bp-btn bp-btn-primary" disabled>
+                                    <span class="bp-btn-bracket">[</span>
+                                    Рассчитать
+                                    <span class="bp-btn-bracket">]</span>
                                 </button>
-                                <button type="button" id="clearFormButton" class="btn btn-outline-secondary">
-                                    <i class="bi bi-arrow-clockwise"></i> Сброс
+                                <button type="button" id="clearFormButton" class="bp-btn bp-btn-ghost">
+                                    Сброс
                                 </button>
                             </div>
                         </form>
                     </div>
-                    <div class="col-lg-6 mt-4 mt-lg-0">
-                        <div class="card h-100">
-                            <div class="card-header bg-secondary text-white">
-                                <h3 class="h5 mb-0">
-                                    <i class="bi bi-map"></i> Карта расположения
-                                </h3>
-                            </div>
-                            <div class="card-body p-0">
-                                <div id="map" class="rounded-bottom"></div>
-                            </div>
-                            <div class="card-footer">
-                                <div class="d-flex justify-content-center gap-4">
-                                    <div class="d-flex align-items-center">
-                                        <span class="badge bg-danger me-2">&nbsp;</span>
-                                        <small>Зона эвакуации</small>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <span class="badge bg-warning me-2">&nbsp;</span>
-                                        <small>Зона радиомолчания</small>
-                                    </div>
-                                </div>
-                            </div>
+                    <div class="col-lg-6">
+                        <div class="bp-mapwrap">
+                            <header class="bp-card-header bp-card-header-sub">
+                                <span class="bp-card-fig">FIG. 02</span>
+                                <h3 class="bp-card-title">План расположения</h3>
+                                <span class="bp-card-meta">SECTION B</span>
+                            </header>
+                            <div id="map"></div>
+                            <footer class="bp-map-legend">
+                                <span class="bp-legend-item">
+                                    <span class="bp-legend-swatch bp-legend-swatch--evac"></span>
+                                    Зона эвакуации
+                                </span>
+                                <span class="bp-legend-item">
+                                    <span class="bp-legend-swatch bp-legend-swatch--radio"></span>
+                                    Зона радиомолчания
+                                </span>
+                            </footer>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
+
     <section id="history" class="mb-5">
-        <div class="card shadow">
-            <div class="card-header bg-success text-white">
-                <h2 class="h4 mb-0">
-                    <i class="bi bi-clock-history"></i> История расчетов
-                    <span id="historyCount" class="badge bg-light text-dark ms-2">0</span>
-                </h2>
-            </div>
-            <div class="card-body">
-                <div class="d-flex flex-wrap gap-2 mb-3">
-                    <button id="clearTableButton" class="btn btn-outline-danger">
-                        <i class="bi bi-trash"></i> Очистить историю
+        <div class="bp-card">
+            <header class="bp-card-header">
+                <span class="bp-card-fig">FIG. 03</span>
+                <h2 class="bp-card-title">Журнал расчётов</h2>
+                <span id="historyCount" class="bp-counter">0</span>
+                <span class="bp-card-meta">SECTION C</span>
+            </header>
+            <div class="bp-card-body">
+                <div class="bp-toolbar">
+                    <button id="clearTableButton" class="bp-btn bp-btn-ghost bp-btn-danger">
+                        <i class="bi bi-trash"></i> Очистить
                     </button>
-                    <button id="exportTableButton" class="btn btn-outline-primary">
-                        <i class="bi bi-download"></i> Экспорт в CSV
+                    <button id="exportTableButton" class="bp-btn bp-btn-ghost">
+                        <i class="bi bi-download"></i> CSV
                     </button>
-                    <button id="highlightRecentButton" class="btn btn-outline-warning">
-                        <i class="bi bi-star-fill"></i> Подсветить последние 5
+                    <button id="highlightRecentButton" class="bp-btn bp-btn-ghost">
+                        <i class="bi bi-asterisk"></i> Подсветить ×5
                     </button>
-                    <div class="ms-auto">
-                        <div class="input-group input-group-sm">
-                                <span class="input-group-text">
-                                    <i class="bi bi-search"></i>
-                                </span>
-                            <input type="text" id="tableSearch" class="form-control" placeholder="Поиск по истории...">
-                        </div>
+                    <div class="bp-toolbar-search">
+                        <i class="bi bi-search"></i>
+                        <input type="text" id="tableSearch" class="bp-input bp-input-bare" placeholder="Поиск по журналу…">
                     </div>
                 </div>
                 <div class="table-responsive">
-                    <table class="table table-hover table-striped">
-                        <thead class="table-dark">
+                    <table class="bp-table">
+                        <thead>
                         <tr>
                             <th>#</th>
-                            <th><i class="bi bi-flask"></i> Тип вещества</th>
-                            <th><i class="bi bi-speedometer"></i> Вес (г)</th>
-                            <th><i class="bi bi-gem"></i> Тротил. экв. (oz)</th>
-                            <th><i class="bi bi-bullseye"></i> Радиус эвакуации (м)</th>
-                            <th><i class="bi bi-calendar"></i> Дата расчета</th>
-                            <th><i class="bi bi-gear"></i> Действия</th>
+                            <th>Тип вещества</th>
+                            <th>Вес, г</th>
+                            <th>TNT экв., oz</th>
+                            <th>R эвак., м</th>
+                            <th>Дата</th>
+                            <th></th>
                         </tr>
                         </thead>
                         <tbody id="historyTableBody">
                         </tbody>
                     </table>
-                    <div id="emptyTableMessage" class="text-center py-5 text-muted">
-                        <i class="bi bi-clock-history display-4 d-block mb-3"></i>
-                        <h5>Нет записей в истории</h5>
-                        <p>Выполните расчет, чтобы добавить первую запись</p>
+                    <div id="emptyTableMessage" class="bp-empty">
+                        <span class="bp-empty-corner bp-empty-corner--tl"></span>
+                        <span class="bp-empty-corner bp-empty-corner--tr"></span>
+                        <span class="bp-empty-corner bp-empty-corner--bl"></span>
+                        <span class="bp-empty-corner bp-empty-corner--br"></span>
+                        <div class="bp-empty-inner">
+                            <div class="bp-empty-title">NO DATA</div>
+                            <p>Выполните расчёт, чтобы добавить первую запись в журнал.</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
-    <section id="info">
-        <div class="card shadow">
-            <div class="card-header bg-info text-white">
-                <h2 class="h4 mb-0">
-                    <i class="bi bi-info-circle"></i> Справочная информация
-                </h2>
+
+    <section id="munitions" class="mb-5">
+        <div class="bp-card">
+            <header class="bp-card-header">
+                <span class="bp-card-fig">FIG. 04</span>
+                <h2 class="bp-card-title">Справочник боеприпасов</h2>
+                <span id="munitionsCount" class="bp-counter">0</span>
+                <span class="bp-card-meta">SECTION D</span>
+            </header>
+            <div class="bp-card-body">
+                <div class="bp-toolbar">
+                    <div class="bp-toolbar-search" style="margin-left:0;">
+                        <i class="bi bi-search"></i>
+                        <input type="text" id="munitionSearch" class="bp-input bp-input-bare"
+                               placeholder="M67, F-1, ТМ-62, Mk 82…">
+                    </div>
+                    <div id="munitionFilters" class="bp-chips" role="tablist"></div>
+                </div>
+                <div id="munitionsGrid" class="bp-cat-grid"></div>
+                <div id="munitionsEmpty" class="bp-empty">
+                    <span class="bp-empty-corner bp-empty-corner--tl"></span>
+                    <span class="bp-empty-corner bp-empty-corner--tr"></span>
+                    <span class="bp-empty-corner bp-empty-corner--bl"></span>
+                    <span class="bp-empty-corner bp-empty-corner--br"></span>
+                    <div class="bp-empty-inner">
+                        <div class="bp-empty-title">NO MATCH</div>
+                        <p>Не найдено боеприпасов по этому запросу.</p>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
+        </div>
+    </section>
+
+    <section id="info">
+        <div class="bp-card">
+            <header class="bp-card-header">
+                <span class="bp-card-fig">FIG. 05</span>
+                <h2 class="bp-card-title">Справочные определения</h2>
+                <span class="bp-card-meta">SECTION E</span>
+            </header>
+            <div class="bp-card-body">
                 <div class="row g-4">
                     <div class="col-md-4">
-                        <div class="card h-100 border-info">
-                            <div class="card-body text-center">
-                                <i class="bi bi-gem text-primary display-4 mb-3"></i>
-                                <h5 class="card-title">Тротиловый эквивалент</h5>
-                                <p class="card-text">Мера энерговыделения взрывчатого вещества в эквиваленте массы тротила (тринитротолуола).</p>
-                                <div class="badge bg-primary">Основной показатель</div>
-                            </div>
-                        </div>
+                        <article class="bp-note">
+                            <div class="bp-note-tag">E1</div>
+                            <h5 class="bp-note-title">Тротиловый эквивалент</h5>
+                            <p>Мера энерговыделения взрывчатого вещества в эквиваленте массы тротила (тринитротолуола).</p>
+                            <div class="bp-note-foot">PARAM · KEY</div>
+                        </article>
                     </div>
                     <div class="col-md-4">
-                        <div class="card h-100 border-danger">
-                            <div class="card-body text-center">
-                                <i class="bi bi-exclamation-triangle text-danger display-4 mb-3"></i>
-                                <h5 class="card-title">Зона эвакуации</h5>
-                                <p class="card-text">Область вокруг предполагаемого места взрыва, откуда необходимо эвакуировать людей для обеспечения безопасности.</p>
-                                <div class="badge bg-danger">Безопасность</div>
-                            </div>
-                        </div>
+                        <article class="bp-note bp-note--danger">
+                            <div class="bp-note-tag">E2</div>
+                            <h5 class="bp-note-title">Зона эвакуации</h5>
+                            <p>Область вокруг места взрыва, откуда необходимо эвакуировать людей для обеспечения безопасности.</p>
+                            <div class="bp-note-foot">SAFETY · CRITICAL</div>
+                        </article>
                     </div>
                     <div class="col-md-4">
-                        <div class="card h-100 border-warning">
-                            <div class="card-body text-center">
-                                <i class="bi bi-wifi-off text-warning display-4 mb-3"></i>
-                                <h5 class="card-title">Зона радиомолчания</h5>
-                                <p class="card-text">Область, в которой запрещена работа радиопередающих устройств для предотвращения случайной детонации.</p>
-                                <div class="badge bg-warning">Предосторожность</div>
-                            </div>
-                        </div>
+                        <article class="bp-note bp-note--warning">
+                            <div class="bp-note-tag">E3</div>
+                            <h5 class="bp-note-title">Зона радиомолчания</h5>
+                            <p>Область, в которой запрещена работа радиопередающих устройств для предотвращения случайной детонации.</p>
+                            <div class="bp-note-foot">PRECAUTION</div>
+                        </article>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 </main>
-<footer class="bg-dark text-white py-4 mt-5">
+<footer class="bp-footer">
     <div class="container">
-        <div class="row align-items-center">
-            <div class="col-md-6 text-center text-md-start">
-                <div class="mb-3 mb-md-0">
-                    <a href="https://code6.ru/apply/" class="text-white text-decoration-none me-3" target="_blank">
-                        <i class="bi bi-c-circle"></i> 2025 code6.ru
-                    </a>
-                    <a href="https://github.com/IamJustBread" class="text-white text-decoration-none" target="_blank">
-                        <i class="bi bi-github"></i> Ivan S.
-                    </a>
-                </div>
+        <div class="bp-footer-grid">
+            <div>
+                <span class="bp-footer-label">DRAWN BY</span>
+                <a href="https://github.com/IamJustBread" class="bp-footer-link" target="_blank">
+                    <i class="bi bi-github"></i> Ivan S.
+                </a>
             </div>
-            <div class="col-md-6 text-center text-md-end">
-                <p class="mb-0 small text-muted">
-                    Данный калькулятор предназначен только для использования в рамках РП-ситуаций. Данный сайт не является реальным инструментом и не должен быть использован в реальной жизни.
-                </p>
+            <div>
+                <span class="bp-footer-label">© 2025</span>
+                <a href="https://code6.ru/apply/" class="bp-footer-link" target="_blank">code6.ru</a>
+            </div>
+            <div class="bp-footer-disclaimer">
+                Калькулятор предназначен только для использования в рамках РП-ситуаций.
+                Сайт не является реальным инструментом и не должен применяться в реальной жизни.
             </div>
         </div>
     </div>

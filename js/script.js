@@ -1,11 +1,21 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
+    // ===== Константы =====
+    const RADIO_ZONE_RADIUS = 13.25;          // радиус зоны радиомолчания (м, игровая шкала)
+    const CM_PER_INCH = 2.54;
+    const GRAMS_PER_OUNCE = 28.3495;
+    const M_TO_FEET = 3.28084;
+    const GAME_SCALE = 11.28;                 // 1 ед. на оверлее карты ≈ 11.28 фт
+
+    // ===== Состояние =====
     let map;
     let marker;
     let evacuationCircle;
     let radioCircle;
     let calculationHistory = JSON.parse(localStorage.getItem('explosionHistory')) || [];
-    const RADIO_ZONE_RADIUS = 13.25;
+
+    // ===== DOM =====
     const contentTypeSelect = document.getElementById('contentType');
+    const substanceInfo = document.getElementById('substanceInfo');
     const heightInput = document.getElementById('height');
     const widthInput = document.getElementById('width');
     const depthInput = document.getElementById('depth');
@@ -28,18 +38,27 @@ document.addEventListener('DOMContentLoaded', function() {
     const themeToggle = document.getElementById('themeToggle');
     const themeIcon = themeToggle.querySelector('i');
 
-    // Инициализация приложения
+    const munitionSearch = document.getElementById('munitionSearch');
+    const munitionFilters = document.getElementById('munitionFilters');
+    const munitionsGrid = document.getElementById('munitionsGrid');
+    const munitionsEmpty = document.getElementById('munitionsEmpty');
+    const munitionsCount = document.getElementById('munitionsCount');
+
+    let activeMunitionCategory = 'all';
+
+    // ===== Инициализация =====
     function initApp() {
         initMap();
         loadContentTypes();
         updateCalculateButtonState();
         renderHistoryTable();
+        renderMunitionFilters();
+        renderMunitions();
         setupEventListeners();
         setupBootstrapComponents();
         initTheme();
     }
 
-    // Инициализация темы
     function initTheme() {
         const savedTheme = localStorage.getItem('theme') || 'light';
         if (savedTheme === 'dark') {
@@ -49,7 +68,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Включение темной темы
     function enableDarkTheme() {
         document.body.classList.add('dark-theme');
         themeIcon.className = 'bi bi-sun-fill';
@@ -57,15 +75,13 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.setItem('theme', 'dark');
     }
 
-    // Включение светлой темы
     function enableLightTheme() {
         document.body.classList.remove('dark-theme');
         themeIcon.className = 'bi bi-moon-fill';
-        themeToggle.title = 'Переключить на темную тему';
+        themeToggle.title = 'Переключить на тёмную тему';
         localStorage.setItem('theme', 'light');
     }
 
-    // Переключение темы
     function toggleTheme() {
         if (document.body.classList.contains('dark-theme')) {
             enableLightTheme();
@@ -74,25 +90,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Настройка компонентов Bootstrap
     function setupBootstrapComponents() {
         const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
+        tooltipTriggerList.forEach(function (el) {
+            return new bootstrap.Tooltip(el);
         });
-        window.addEventListener('resize', function() {
+        window.addEventListener('resize', function () {
             if (map) {
-                setTimeout(() => {
-                    map.invalidateSize();
-                }, 100);
+                setTimeout(() => map.invalidateSize(), 100);
             }
         });
     }
 
-    // Инициализация карты Leaflet
     function initMap() {
         const southWest = L.latLng(51.49, -0.14);
-        const northEast = L.latLng(51.52, -0.1);
+        const northEast = L.latLng(51.52, -0.10);
         const bounds = L.latLngBounds(southWest, northEast);
 
         map = L.map('map', {
@@ -104,11 +116,9 @@ document.addEventListener('DOMContentLoaded', function() {
             doubleClickZoom: false,
         });
 
-        // Добавление фонового изображения карты
         L.imageOverlay('assets/images/map.webp', bounds).addTo(map);
 
-        // Обработчик клика по карте для установки маркера
-        map.on('click', function(e) {
+        map.on('click', function (e) {
             if (marker) {
                 marker.setLatLng(e.latlng);
             } else {
@@ -125,120 +135,171 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Загрузка типов веществ
+    // ===== Загрузка списка веществ =====
     function loadContentTypes() {
         contentTypeSelect.innerHTML = '<option value="">Выберите тип вещества</option>';
-        explosivesData.forEach(explosive => {
+        // Сортируем по тротиловому эквиваленту от меньшего к большему — так удобнее искать.
+        const sorted = [...explosivesData].sort((a, b) => a.tnt_equivalent - b.tnt_equivalent);
+        sorted.forEach(explosive => {
             const option = document.createElement('option');
             option.value = explosive.id;
-            option.textContent = explosive.substance_name;
-            option.setAttribute('data-density', explosive.density);
-            option.setAttribute('data-tnt-equivalent', explosive.tnt_equivalent);
+            option.textContent = `${explosive.substance_name} — TNT ×${explosive.tnt_equivalent.toFixed(2)}`;
             contentTypeSelect.appendChild(option);
         });
     }
 
-    // Проверка данных для расчета
+    function getSelectedSubstance() {
+        const id = parseInt(contentTypeSelect.value, 10);
+        if (!id) return null;
+        return explosivesData.find(e => e.id === id) || null;
+    }
+
+    function updateSubstanceInfo() {
+        if (!substanceInfo) return;
+        const s = getSelectedSubstance();
+        if (!s) {
+            substanceInfo.innerHTML = '';
+            substanceInfo.classList.add('d-none');
+            return;
+        }
+        const categoryLabel = explosiveCategoryLabels[s.category] || s.category;
+        const stateLabel = explosiveStateLabels[s.state] || s.state;
+        substanceInfo.classList.remove('d-none');
+        substanceInfo.innerHTML = `
+            <div class="bp-spec">
+                <span class="bp-spec-row">
+                    <span class="badge">${categoryLabel}</span>
+                    <span class="badge">${stateLabel}</span>
+                </span>
+                <span class="bp-spec-row">
+                    <span>FORMULA</span>
+                    <span class="fw-semibold">${s.formula}</span>
+                </span>
+                <span class="bp-spec-row">
+                    <span>DENSITY</span>
+                    <span class="fw-semibold">${s.density.toFixed(2)} г/см³</span>
+                </span>
+                <span class="bp-spec-row">
+                    <span>VOD</span>
+                    <span class="fw-semibold">${s.detonation_force.toFixed(0)} м/с</span>
+                </span>
+            </div>`;
+    }
+
+    // ===== Валидация формы =====
     function isRequiredInfoPresent() {
-        const selectedSubstanceId = contentTypeSelect.value;
+        const hasSubstance = !!contentTypeSelect.value;
         const hasWeight = parseFloat(weightInput.value) > 0;
-        const hasDimensions = parseFloat(heightInput.value) > 0 &&
+        const hasDimensions =
+            parseFloat(heightInput.value) > 0 &&
             parseFloat(widthInput.value) > 0 &&
             parseFloat(depthInput.value) > 0;
-        const hasMarker = marker !== undefined;
-        return selectedSubstanceId && (hasWeight || hasDimensions) && hasMarker;
+        const hasMarker = !!marker;
+        return hasSubstance && (hasWeight || hasDimensions) && hasMarker;
     }
 
     function updateCalculateButtonState() {
         calculateButton.disabled = !isRequiredInfoPresent();
     }
 
-    // Ррасчет
+    // ===== Основной расчёт =====
     function calculateExplosion() {
         if (!isRequiredInfoPresent()) {
-            showAlert('Пожалуйста, заполните все необходимые данные перед расчетом.', 'warning');
+            showAlert('Пожалуйста, заполните все необходимые данные перед расчётом.', 'warning');
             return;
         }
-        const trotylResult = calculateTrotylEquivalent();
-        if (!trotylResult) {
-            showAlert('Ошибка расчета. Проверьте введенные данные.', 'danger');
+        const result = calculateTrotylEquivalent();
+        if (!result) {
+            showAlert('Ошибка расчёта. Проверьте введённые данные.', 'danger');
             return;
         }
-        const { trotylEquivalentValue, trotylEquivalentInPounds, weightInGrams } = trotylResult;
-        trotylEquivalentInput.value = `${trotylEquivalentValue} oz (${trotylEquivalentInPounds} lb)`;
-        const trotylInKg = (trotylEquivalentValue * 28.3495) / 1000;
-        const evacuationRadiusMeters = (150 * Math.pow(trotylInKg, 1/6) * 3.28084) / 11.28;
-        displayZonesOnMap(evacuationRadiusMeters);
+        const { trotylOunces, trotylPounds, weightGrams } = result;
+        trotylEquivalentInput.value = `${trotylOunces.toFixed(2)} oz (${trotylPounds.toFixed(2)} lb)`;
 
-        // Добавление в историю
+        // R = 150 · W^(1/6) — масштабированный для РП радиус.
+        const trotylKg = (trotylOunces * GRAMS_PER_OUNCE) / 1000;
+        const evacuationFeet = 150 * Math.pow(trotylKg, 1 / 6) * M_TO_FEET;
+        const evacuationMapUnits = evacuationFeet / GAME_SCALE;
+
+        displayZonesOnMap(evacuationMapUnits, evacuationFeet);
+
+        const substance = getSelectedSubstance();
         addToHistory({
-            substanceName: contentTypeSelect.options[contentTypeSelect.selectedIndex].text,
-            weight: weightInGrams,
-            trotylEquivalent: trotylEquivalentValue,
-            evacuationRadius: evacuationRadiusMeters,
+            substanceName: substance ? substance.substance_name : '—',
+            formula: substance ? substance.formula : '',
+            category: substance ? substance.category : '',
+            weight: weightGrams,
+            trotylEquivalent: trotylOunces,
+            evacuationRadius: evacuationMapUnits,
+            evacuationFeet: evacuationFeet,
             date: new Date().toLocaleString('ru-RU')
         });
         renderHistoryTable();
-        showAlert('Расчет успешно выполнен! Зоны безопасности отображены на карте.', 'success');
+        showAlert('Расчёт выполнен. Зоны безопасности отображены на карте.', 'success');
     }
 
-    // Расчет тротилового эквивалента
     function calculateTrotylEquivalent() {
-        const selectedSubstance = contentTypeSelect.value;
+        const substance = getSelectedSubstance();
+        if (!substance) return null;
+
         const weight = parseFloat(weightInput.value) || 0;
         const height = parseFloat(heightInput.value) || 0;
         const width = parseFloat(widthInput.value) || 0;
         const depth = parseFloat(depthInput.value) || 0;
-        const dimensionUnit = dimensionUnitSelect.value;
-        const selectedOption = contentTypeSelect.options[contentTypeSelect.selectedIndex];
-        if (!selectedSubstance || (!weight && (!height || !width || !depth))) {
-            return null;
-        }
-        const density = parseFloat(selectedOption.getAttribute('data-density')) || 0;
-        const tntEquivalent = parseFloat(selectedOption.getAttribute('data-tnt-equivalent')) || 0;
-        // Конвертация размеров
-        const metersToInches = 0.39;
-        const convertedHeight = dimensionUnit === 'inch' ? height / metersToInches : height;
-        const convertedWidth = dimensionUnit === 'inch' ? width / metersToInches : width;
-        const convertedDepth = dimensionUnit === 'inch' ? depth / metersToInches : depth;
-        // Расчет объема
-        const volumeCm3 = convertedHeight * convertedWidth * convertedDepth;
-        const calculatedWeight = volumeCm3 * density;
-        // Конвертация веса
-        const weightInGrams = weightUnitSelect.value === 'oz' ? weight * 28.3495 : weight;
-        const finalWeight = weight ? weightInGrams : calculatedWeight;
-        // Расчет тротилового эквивалента
-        const trotylEquivalentValue = (tntEquivalent * finalWeight) / 28.3495;
-        const trotylEquivalentInPounds = trotylEquivalentValue / 16;
+
+        if (!weight && (!height || !width || !depth)) return null;
+
+        // Размеры приводим к сантиметрам — плотность хранится в г/см³.
+        const dimUnit = dimensionUnitSelect.value;
+        const toCm = (v) => (dimUnit === 'inch' ? v * CM_PER_INCH : v);
+        const volumeCm3 = toCm(height) * toCm(width) * toCm(depth);
+        const calculatedWeightGrams = volumeCm3 * substance.density;
+
+        // Вес приводим к граммам.
+        const weightGramsRaw = weightUnitSelect.value === 'oz'
+            ? weight * GRAMS_PER_OUNCE
+            : weight;
+
+        const finalGrams = weight > 0 ? weightGramsRaw : calculatedWeightGrams;
+        const trotylGrams = substance.tnt_equivalent * finalGrams;
+        const trotylOunces = trotylGrams / GRAMS_PER_OUNCE;
+        const trotylPounds = trotylOunces / 16;
+
         return {
-            trotylEquivalentValue: trotylEquivalentValue.toFixed(2),
-            trotylEquivalentInPounds: trotylEquivalentInPounds.toFixed(2),
-            weightInGrams: finalWeight.toFixed(2)
+            trotylOunces,
+            trotylPounds,
+            weightGrams: finalGrams
         };
     }
 
-    // Отображение зон на карте
-    function displayZonesOnMap(evacuationRadius) {
+    // ===== Карта =====
+    function displayZonesOnMap(evacuationRadius, evacuationFeet) {
         if (!marker) return;
-        const markerLatLng = marker.getLatLng();
+        const center = marker.getLatLng();
+
         if (evacuationCircle) map.removeLayer(evacuationCircle);
         if (radioCircle) map.removeLayer(radioCircle);
 
-        // Создание круга зоны эвакуации
-        evacuationCircle = L.circle(markerLatLng, {
+        evacuationCircle = L.circle(center, {
             color: '#dc3545',
             fillColor: '#dc3545',
             fillOpacity: 0.3,
             radius: evacuationRadius
         }).addTo(map);
+
+        // Для повторного перерисовывания (при переключении радиозоны) сохраняем
+        // исходное значение в футах прямо на слое.
+        if (typeof evacuationFeet === 'number') {
+            evacuationCircle._evacuationFeet = evacuationFeet;
+        }
+        const feetForTooltip = evacuationCircle._evacuationFeet || (evacuationRadius * GAME_SCALE);
         evacuationCircle.bindTooltip(
-            `Зона эвакуации: ${(evacuationRadius * 11.28).toFixed(2)} ft`,
+            `Зона эвакуации: ${feetForTooltip.toFixed(2)} ft`,
             { permanent: true, direction: 'right', className: 'fw-bold' }
         );
 
-        // Создание круга зоны радиомолчания
         if (radioZoneCheckbox.checked) {
-            radioCircle = L.circle(markerLatLng, {
+            radioCircle = L.circle(center, {
                 color: '#ffc107',
                 fillColor: '#ffc107',
                 fillOpacity: 0.3,
@@ -251,59 +312,53 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-
+    // ===== Конверсия единиц для подсказок =====
     function updateDimensionConversion() {
-        const metersToFeet = 0.393701;
-        const dimensionUnit = dimensionUnitSelect.value;
-        const height = parseFloat(heightInput.value) || 0;
-        const width = parseFloat(widthInput.value) || 0;
-        const depth = parseFloat(depthInput.value) || 0;
-        let convertedHeight = height;
-        let convertedWidth = width;
-        let convertedDepth = depth;
-        if (dimensionUnit === 'sm') {
-            convertedHeight = (height * metersToFeet).toFixed(2);
-            convertedWidth = (width * metersToFeet).toFixed(2);
-            convertedDepth = (depth * metersToFeet).toFixed(2);
+        const dimUnit = dimensionUnitSelect.value;
+        const h = parseFloat(heightInput.value) || 0;
+        const w = parseFloat(widthInput.value) || 0;
+        const d = parseFloat(depthInput.value) || 0;
+
+        let text;
+        if (dimUnit === 'sm') {
+            const fmt = (v) => (v / CM_PER_INCH).toFixed(2);
+            text = `(${fmt(h)} in × ${fmt(w)} in × ${fmt(d)} in)`;
+        } else {
+            const fmt = (v) => (v * CM_PER_INCH).toFixed(2);
+            text = `(${fmt(h)} см × ${fmt(w)} см × ${fmt(d)} см)`;
         }
-        dimensionConversion.textContent = `(${convertedHeight} inch × ${convertedWidth} inch × ${convertedDepth} inch)`;
+        dimensionConversion.textContent = text;
         updateCalculateButtonState();
         updateTrotylEquivalentDisplay();
     }
 
     function updateWeightConversion() {
-        const kgToPound = 28.3495;
-        const weightUnit = weightUnitSelect.value;
-        const weight = parseFloat(weightInput.value) || 0;
-
-        let convertedWeight = weight;
-
-        if (weightUnit === 'gram') {
-            convertedWeight = (weight / kgToPound).toFixed(2);
+        const unit = weightUnitSelect.value;
+        const v = parseFloat(weightInput.value) || 0;
+        let text;
+        if (unit === 'gram') {
+            text = `(${(v / GRAMS_PER_OUNCE).toFixed(2)} oz)`;
+        } else {
+            text = `(${(v * GRAMS_PER_OUNCE).toFixed(2)} г)`;
         }
-
-        weightConversion.textContent = `(${convertedWeight} oz)`;
+        weightConversion.textContent = text;
         updateCalculateButtonState();
         updateTrotylEquivalentDisplay();
     }
 
     function updateTrotylEquivalentDisplay() {
-        const trotylResult = calculateTrotylEquivalent();
-
-        if (trotylResult) {
-            const { trotylEquivalentValue, trotylEquivalentInPounds } = trotylResult;
-            trotylEquivalentInput.value = `${trotylEquivalentValue} oz (${trotylEquivalentInPounds} lb)`;
+        const result = calculateTrotylEquivalent();
+        if (result) {
+            trotylEquivalentInput.value =
+                `${result.trotylOunces.toFixed(2)} oz (${result.trotylPounds.toFixed(2)} lb)`;
         } else {
             trotylEquivalentInput.value = '';
         }
     }
 
-    // Работа с историей расчетов
+    // ===== История =====
     function addToHistory(calculation) {
-        calculationHistory.unshift({
-            id: Date.now(),
-            ...calculation
-        });
+        calculationHistory.unshift({ id: Date.now(), ...calculation });
         if (calculationHistory.length > 50) {
             calculationHistory = calculationHistory.slice(0, 50);
         }
@@ -319,29 +374,29 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         emptyTableMessage.style.display = 'none';
 
-        // Поисковая фильтрация
         const searchTerm = tableSearch.value.toLowerCase();
-        const filteredHistory = calculationHistory.filter(item =>
-            item.substanceName.toLowerCase().includes(searchTerm) ||
-            item.date.toLowerCase().includes(searchTerm)
+        const filtered = calculationHistory.filter(item =>
+            (item.substanceName || '').toLowerCase().includes(searchTerm) ||
+            (item.date || '').toLowerCase().includes(searchTerm)
         );
-        filteredHistory.forEach((item, index) => {
+
+        filtered.forEach((item, index) => {
             const row = document.createElement('tr');
             row.className = 'fade-in';
             row.innerHTML = `
                 <td class="fw-bold">${index + 1}</td>
-                <td>${item.substanceName}</td>
-                <td>${parseFloat(item.weight).toFixed(2)}</td>
-                <td class="fw-bold text-primary">${parseFloat(item.trotylEquivalent).toFixed(2)}</td>
-                <td class="fw-bold text-danger">${parseFloat(item.evacuationRadius).toFixed(2)}</td>
-                <td><small class="text-muted">${item.date}</small></td>
+                <td>${escapeHtml(item.substanceName)}</td>
+                <td>${Number(item.weight).toFixed(2)}</td>
+                <td class="fw-bold text-primary">${Number(item.trotylEquivalent).toFixed(2)}</td>
+                <td class="fw-bold text-danger">${Number(item.evacuationRadius).toFixed(2)}</td>
+                <td><small class="text-muted">${escapeHtml(item.date)}</small></td>
                 <td>
                     <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${item.id}" title="Удалить">
                         <i class="bi bi-trash"></i>
                     </button>
                 </td>
             `;
-            row.addEventListener('click', function(e) {
+            row.addEventListener('click', function (e) {
                 if (!e.target.closest('.delete-btn')) {
                     this.classList.toggle('selected-row');
                 }
@@ -349,14 +404,157 @@ document.addEventListener('DOMContentLoaded', function() {
             historyTableBody.appendChild(row);
         });
 
-        // Добавление обработчиков для кнопок удаления
         document.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', function(e) {
+            btn.addEventListener('click', function (e) {
                 e.stopPropagation();
-                const id = parseInt(this.getAttribute('data-id'));
+                const id = parseInt(this.getAttribute('data-id'), 10);
                 removeFromHistory(id);
             });
         });
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    // ===== Справочник боеприпасов =====
+    function renderMunitionFilters() {
+        if (!munitionFilters) return;
+        const categories = ['all', ...Object.keys(munitionsCategoryLabels)];
+        munitionFilters.innerHTML = categories.map(cat => {
+            const label = cat === 'all' ? 'Все' : munitionsCategoryLabels[cat];
+            const count = cat === 'all'
+                ? munitionsData.length
+                : munitionsData.filter(m => m.category === cat).length;
+            const active = cat === activeMunitionCategory ? ' is-active' : '';
+            return `<button type="button" class="bp-chip${active}" data-cat="${cat}">
+                        <span>${escapeHtml(label)}</span>
+                        <span class="bp-chip-count">${count}</span>
+                    </button>`;
+        }).join('');
+        munitionFilters.querySelectorAll('.bp-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                activeMunitionCategory = chip.getAttribute('data-cat');
+                renderMunitionFilters();
+                renderMunitions();
+            });
+        });
+    }
+
+    function munitionMatches(m, q) {
+        if (!q) return true;
+        const hay = [
+            m.name, m.full_name, m.filler_note, m.origin,
+            munitionsCategoryLabels[m.category] || ''
+        ].join(' ').toLowerCase();
+        return hay.includes(q);
+    }
+
+    function formatMass(g) {
+        if (g >= 1000) return `${(g / 1000).toFixed(g >= 10000 ? 0 : 2)} кг`;
+        return `${g} г`;
+    }
+
+    function renderMunitions() {
+        if (!munitionsGrid) return;
+        const q = (munitionSearch?.value || '').trim().toLowerCase();
+        const filtered = munitionsData.filter(m =>
+            (activeMunitionCategory === 'all' || m.category === activeMunitionCategory) &&
+            munitionMatches(m, q)
+        );
+
+        munitionsCount.textContent = filtered.length;
+
+        if (filtered.length === 0) {
+            munitionsGrid.innerHTML = '';
+            munitionsEmpty.style.display = 'block';
+            return;
+        }
+        munitionsEmpty.style.display = 'none';
+
+        munitionsGrid.innerHTML = filtered.map((m, idx) => {
+            const explosive = explosivesData.find(e => e.id === m.explosive_id);
+            const explosiveName = explosive ? explosive.substance_name : '—';
+            const tntEq = explosive
+                ? ((explosive.tnt_equivalent * m.filler_grams)).toFixed(0)
+                : '—';
+            const tag = `M${String(idx + 1).padStart(2, '0')}`;
+            const eff = m.effective_m
+                ? `<div class="bp-mun-row"><span>R эфф.</span><span class="fw-semibold">${m.effective_m} м</span></div>`
+                : '';
+            const delay = m.delay_sec
+                ? `<div class="bp-mun-row"><span>Задержка</span><span class="fw-semibold">${m.delay_sec} с</span></div>`
+                : '';
+            return `
+                <article class="bp-mun-card">
+                    <header class="bp-mun-head">
+                        <span class="bp-mun-tag">${tag}</span>
+                        <div class="bp-mun-title-wrap">
+                            <h3 class="bp-mun-title">${escapeHtml(m.name)}</h3>
+                            <span class="bp-mun-sub">${escapeHtml(m.full_name)}</span>
+                        </div>
+                    </header>
+                    <div class="bp-mun-meta">
+                        <span class="badge">${escapeHtml(munitionsCategoryLabels[m.category] || m.category)}</span>
+                        <span class="badge">${escapeHtml(m.origin || '—')}</span>
+                    </div>
+                    <div class="bp-mun-body">
+                        <div class="bp-mun-row"><span>ВВ</span><span class="fw-semibold">${escapeHtml(m.filler_note || explosiveName)}</span></div>
+                        <div class="bp-mun-row"><span>Масса ВВ</span><span class="fw-semibold">${formatMass(m.filler_grams)}</span></div>
+                        <div class="bp-mun-row"><span>Масса итого</span><span class="fw-semibold">${formatMass(m.total_grams)}</span></div>
+                        <div class="bp-mun-row"><span>TNT экв.</span><span class="fw-semibold">${formatMass(Number(tntEq))}</span></div>
+                        ${eff}
+                        ${delay}
+                    </div>
+                    <p class="bp-mun-note">${escapeHtml(m.note || '')}</p>
+                    <footer class="bp-mun-foot">
+                        <button type="button" class="bp-btn bp-btn-primary bp-mun-use" data-id="${m.id}">
+                            <span class="bp-btn-bracket">[</span>
+                            В расчёт
+                            <span class="bp-btn-bracket">]</span>
+                        </button>
+                    </footer>
+                </article>`;
+        }).join('');
+
+        munitionsGrid.querySelectorAll('.bp-mun-use').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = parseInt(btn.getAttribute('data-id'), 10);
+                applyMunition(id);
+            });
+        });
+    }
+
+    function applyMunition(munitionId) {
+        const m = munitionsData.find(x => x.id === munitionId);
+        if (!m) return;
+        const explosive = explosivesData.find(e => e.id === m.explosive_id);
+        if (!explosive) {
+            showAlert('Не найдено вещество для этого боеприпаса.', 'warning');
+            return;
+        }
+        contentTypeSelect.value = String(explosive.id);
+        weightUnitSelect.value = 'gram';
+        weightInput.value = m.filler_grams;
+        heightInput.value = '';
+        widthInput.value = '';
+        depthInput.value = '';
+        dimensionConversion.textContent = '';
+
+        updateSubstanceInfo();
+        updateWeightConversion();
+        updateCalculateButtonState();
+        updateTrotylEquivalentDisplay();
+
+        document.getElementById('calculator')
+            .scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        showAlert(`Параметры «${m.name}» подставлены в калькулятор. Поставьте маркер на карту и нажмите «Рассчитать».`, 'success');
     }
 
     function removeFromHistory(id) {
@@ -368,58 +566,69 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function clearHistory() {
         if (calculationHistory.length === 0) return;
-
-        if (confirm('Вы уверены, что хотите очистить всю историю расчетов?')) {
+        if (confirm('Вы уверены, что хотите очистить всю историю расчётов?')) {
             calculationHistory = [];
             localStorage.removeItem('explosionHistory');
             renderHistoryTable();
-            showAlert('История расчетов очищена', 'info');
+            showAlert('История расчётов очищена', 'info');
         }
     }
 
-    // Экспорт в CSV
+    // ===== Экспорт CSV =====
+    function csvEscape(value) {
+        const s = String(value ?? '');
+        if (/[",\n;]/.test(s)) {
+            return '"' + s.replace(/"/g, '""') + '"';
+        }
+        return s;
+    }
+
     function exportToCSV() {
         if (calculationHistory.length === 0) {
             showAlert('Нет данных для экспорта', 'warning');
             return;
         }
-        const headers = ['№', 'Тип вещества', 'Вес (г)', 'Тротил. экв. (oz)', 'Радиус эвакуации (м)', 'Дата расчета'];
-        const csvRows = [headers.join(',')];
+        const headers = [
+            '№', 'Тип вещества', 'Формула', 'Категория',
+            'Вес (г)', 'Тротил. экв. (oz)', 'Радиус эвакуации (карта)',
+            'Радиус эвакуации (ft)', 'Дата расчёта'
+        ];
+        const rows = [headers.map(csvEscape).join(',')];
         calculationHistory.forEach((item, index) => {
-            const row = [
+            rows.push([
                 index + 1,
-                `"${item.substanceName}"`,
-                item.weight,
-                item.troтиlEquivalent,
-                item.evacuationRadius,
-                `"${item.date}"`
-            ];
-            csvRows.push(row.join(','));
+                item.substanceName,
+                item.formula || '',
+                explosiveCategoryLabels[item.category] || item.category || '',
+                Number(item.weight).toFixed(2),
+                Number(item.trotylEquivalent).toFixed(2),
+                Number(item.evacuationRadius).toFixed(2),
+                item.evacuationFeet != null ? Number(item.evacuationFeet).toFixed(2) : '',
+                item.date
+            ].map(csvEscape).join(','));
         });
-        const csvContent = csvRows.join('\n');
+        // BOM, чтобы Excel корректно понимал UTF-8.
+        const csvContent = '﻿' + rows.join('\n');
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.setAttribute('href', url);
-        link.setAttribute('download', `расчеты_взрывотехника_${new Date().toISOString().split('T')[0]}.csv`);
+        link.href = url;
+        link.download = `расчёты_взрывотехника_${new Date().toISOString().split('T')[0]}.csv`;
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        showAlert('Данные экспортированы в CSV файл', 'success');
+        URL.revokeObjectURL(url);
+        showAlert('Данные экспортированы в CSV', 'success');
     }
 
-    // Подсветка последних записей
     function highlightRecentCalculations() {
-        document.querySelectorAll('.historyTableBody tr').forEach(row => {
-            row.classList.remove('highlighted-row');
-        });
         const rows = document.querySelectorAll('#historyTableBody tr');
+        rows.forEach(row => row.classList.remove('highlighted-row'));
         const count = Math.min(5, rows.length);
         for (let i = 0; i < count; i++) {
             rows[i].classList.add('highlighted-row');
         }
-        // Автоматическое снятие подсветки через 5 секунд
         setTimeout(() => {
             document.querySelectorAll('#historyTableBody tr').forEach(row => {
                 row.classList.remove('highlighted-row');
@@ -427,7 +636,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     }
 
-    // Сброс формы
+    // ===== Сброс формы =====
     function clearForm() {
         contentTypeSelect.value = '';
         heightInput.value = '';
@@ -435,77 +644,80 @@ document.addEventListener('DOMContentLoaded', function() {
         depthInput.value = '';
         weightInput.value = '';
         trotylEquivalentInput.value = '';
+        dimensionUnitSelect.value = 'sm';
+        weightUnitSelect.value = 'gram';
+        dimensionConversion.textContent = '';
+        weightConversion.textContent = '';
         radioZoneCheckbox.checked = true;
-        if (evacuationCircle) map.removeLayer(evacuationCircle);
-        if (radioCircle) map.removeLayer(radioCircle);
-        if (marker) map.removeLayer(marker);
-        marker = undefined;
+
+        if (evacuationCircle) { map.removeLayer(evacuationCircle); evacuationCircle = null; }
+        if (radioCircle) { map.removeLayer(radioCircle); radioCircle = null; }
+        if (marker) { map.removeLayer(marker); marker = null; }
+
+        updateSubstanceInfo();
         updateCalculateButtonState();
         updateTrotylEquivalentDisplay();
         showAlert('Форма очищена', 'info');
     }
 
-    // Показать уведомление
+    // ===== Уведомления =====
     function showAlert(message, type) {
-        const existingAlert = document.querySelector('.alert-dismissible');
-        if (existingAlert) {
-            existingAlert.remove();
-        }
+        const existing = document.querySelector('.alert-dismissible');
+        if (existing) existing.remove();
+
         const alert = document.createElement('div');
         alert.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
         alert.style.zIndex = '1050';
         alert.innerHTML = `
-            ${message}
+            ${escapeHtml(message)}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         `;
         document.body.appendChild(alert);
-
-        // Автоматическое скрытие через 5 секунд
         setTimeout(() => {
-            if (alert.parentNode) {
-                alert.remove();
-            }
+            if (alert.parentNode) alert.remove();
         }, 5000);
     }
 
-    // Настройка обработчиков событий
+    // ===== Слушатели =====
     function setupEventListeners() {
-        // Основные элементы формы
-        contentTypeSelect.addEventListener('change', function() {
+        contentTypeSelect.addEventListener('change', function () {
+            updateSubstanceInfo();
             updateCalculateButtonState();
             updateTrotylEquivalentDisplay();
         });
-        heightInput.addEventListener('input', updateDimensionConversion);
-        widthInput.addEventListener('input', updateDimensionConversion);
-        depthInput.addEventListener('input', updateDimensionConversion);
+
+        [heightInput, widthInput, depthInput].forEach(el =>
+            el.addEventListener('input', updateDimensionConversion));
         dimensionUnitSelect.addEventListener('change', updateDimensionConversion);
+
         weightInput.addEventListener('input', updateWeightConversion);
         weightUnitSelect.addEventListener('change', updateWeightConversion);
-        radioZoneCheckbox.addEventListener('change', function() {
+
+        radioZoneCheckbox.addEventListener('change', function () {
             if (evacuationCircle && marker) {
-                displayZonesOnMap(evacuationCircle.getRadius());
+                displayZonesOnMap(evacuationCircle.getRadius(), evacuationCircle._evacuationFeet);
             }
         });
 
-        // Кнопки
         calculateButton.addEventListener('click', calculateExplosion);
         clearFormButton.addEventListener('click', clearForm);
-
-        // Переключение темы
         themeToggle.addEventListener('click', toggleTheme);
 
-        // Управление таблицей
         clearTableButton.addEventListener('click', clearHistory);
         exportTableButton.addEventListener('click', exportToCSV);
         highlightRecentButton.addEventListener('click', highlightRecentCalculations);
         tableSearch.addEventListener('input', renderHistoryTable);
-        document.addEventListener('keypress', function(e) {
+
+        if (munitionSearch) {
+            munitionSearch.addEventListener('input', renderMunitions);
+        }
+
+        document.addEventListener('keypress', function (e) {
             if (e.key === 'Enter' && isRequiredInfoPresent()) {
                 calculateExplosion();
             }
         });
     }
 
-    // Запуск приложения
     initApp();
 });
