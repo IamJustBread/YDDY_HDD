@@ -1,0 +1,289 @@
+/* Основные переменные */
+:root {
+    --bs-primary-rgb: 52, 152, 219;
+    --bs-secondary-rgb: 44, 62, 80;
+    --bs-success-rgb: 46, 204, 113;
+    --bs-info-rgb: 41, 128, 185;
+    --bs-body-bg: #ffffff;
+    --bs-body-color: #212529;
+    --bs-card-bg: #ffffff;
+    --bs-card-color: #212529;
+    --bs-input-bg: #ffffff;
+    --bs-input-color: #212529;
+    --bs-input-border: #ced4da;
+    --bs-table-bg: #ffffff;
+    --bs-table-color: #212529;
+    --bs-border-color: #dee2e6;
+}
+
+/* Темная тема */
+body.dark-theme {
+    --bs-body-bg: #121212;
+    --bs-body-color: #e9ecef;
+    --bs-card-bg: #1e1e1e;
+    --bs-card-color: #e9ecef;
+    --bs-input-bg: #2d2d2d;
+    --bs-input-color: #e9ecef;
+    --bs-input-border: #404040;
+    --bs-table-bg: #1e1e1e;
+    --bs-table-color: #e9ecef;
+    --bs-border-color: #404040;
+    --bs-dark-rgb: 33, 37, 41;
+    --bs-light-rgb: 248, 249, 250;
+}
+
+/* Кнопка переключения темы - фикс для иконки */
+#themeToggle i {
+    color: #ffffff !important;
+}
+
+body.dark-theme #themeToggle i {
+    color: #ffd700 !important; /* Золотистый для солнца в темной теме */
+}
+
+/* Применение переменных */
+body {
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Карточки */
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    background-color: var(--bs-card-bg);
+    color: var(--bs-card-color);
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* Формы */
+.form-control, .form-select {
+    background-color: var(--bs-input-bg);
+    color: var(--bs-input-color);
+    border-color: var(--bs-input-border);
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: rgba(var(--bs-primary-rgb), 0.5);
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+    background-color: var(--bs-input-bg);
+    color: var(--bs-input-color);
+}
+
+.form-control[readonly] {
+    background-color: var(--bs-input-bg);
+    color: var(--bs-input-color);
+}
+
+/* Таблицы */
+.table {
+    --bs-table-bg: var(--bs-table-bg);
+    --bs-table-color: var(--bs-table-color);
+    --bs-table-border-color: var(--bs-border-color);
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.1);
+    transform: translateX(2px);
+    transition: all 0.2s ease;
+}
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(var(--bs-light-rgb), 0.05);
+}
+
+/* Кнопки */
+.btn-outline-light {
+    color: var(--bs-body-color);
+    border-color: var(--bs-border-color);
+}
+
+.btn-outline-light:hover {
+    background-color: var(--bs-border-color);
+    border-color: var(--bs-border-color);
+}
+
+/* Карта */
+#map {
+    height: 400px;
+    min-height: 300px;
+    border-radius: var(--bs-border-radius);
+    z-index: 1;
+}
+
+/* Адаптация карты для мобильных */
+@media (max-width: 768px) {
+    #map {
+        height: 300px;
+    }
+}
+
+/* Карточки в темной теме */
+.dark-theme .card-header.bg-primary,
+.dark-theme .card-header.bg-secondary,
+.dark-theme .card-header.bg-success,
+.dark-theme .card-header.bg-info {
+    opacity: 0.9;
+}
+
+/* Форма в темной теме */
+.dark-theme .form-text.text-muted {
+    color: #adb5bd !important;
+}
+
+/* Подсветка строк таблицы */
+.highlighted-row {
+    background-color: rgba(255, 193, 7, 0.15) !important;
+    border-left: 3px solid #ffc107;
+}
+
+.selected-row {
+    background-color: rgba(13, 110, 253, 0.1) !important;
+    border-left: 3px solid #0d6efd;
+}
+
+/* Кнопки */
+.btn {
+    transition: all 0.2s ease;
+}
+
+.btn-lg {
+    padding: 0.75rem 1.5rem;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #2980b9, #1c6ea4);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+}
+
+.dark-theme .btn-outline-secondary {
+    color: #adb5bd;
+    border-color: #495057;
+}
+
+.dark-theme .btn-outline-secondary:hover {
+    background-color: #495057;
+    color: #ffffff;
+}
+
+/* Переключатели */
+.form-check-input {
+    background-color: var(--bs-input-bg);
+    border-color: var(--bs-border-color);
+}
+
+.form-check-input:checked {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+
+.dark-theme .form-switch .form-check-input {
+    background-color: #495057;
+}
+
+/* Иконки */
+.bi {
+    vertical-align: -0.125em;
+}
+
+/* Навигация */
+.navbar-brand {
+    font-weight: 600;
+}
+
+.nav-link.active {
+    font-weight: 500;
+    border-bottom: 2px solid var(--bs-primary);
+}
+
+/* Анимации */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Пустая таблица */
+#emptyTableMessage {
+    display: none;
+}
+
+.table:not(:has(tbody tr)) + #emptyTableMessage {
+    display: block;
+}
+
+/* Легенда карты */
+.leaflet-tooltip {
+    font-size: 0.875rem;
+    padding: 0.25rem 0.5rem;
+    background-color: var(--bs-card-bg);
+    color: var(--bs-card-color);
+    border-color: var(--bs-border-color);
+}
+
+/* Футер в темной теме */
+.dark-theme footer.bg-dark {
+    background-color: #1a1a1a !important;
+}
+
+.dark-theme footer .text-muted {
+    color: #adb5bd !important;
+}
+
+/* Адаптивность для очень маленьких экранов */
+@media (max-width: 576px) {
+    .display-4 {
+        font-size: 2rem;
+    }
+
+    .btn {
+        font-size: 0.875rem;
+    }
+
+    .table th, .table td {
+        padding: 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .input-group {
+        margin-top: 0.5rem;
+    }
+}
+
+/* Плавный скролл */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Кастомные отступы */
+.section-spacing {
+    margin-bottom: 3rem;
+}
+
+/* Улучшенные переключатели */
+.form-switch .form-check-input {
+    width: 2.5em;
+    height: 1.25em;
+}
+
+/* Стили для инпутов с числами */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    opacity: 1;
+    height: 2em;
+}
