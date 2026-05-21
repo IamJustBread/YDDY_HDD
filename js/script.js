@@ -382,7 +382,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         filtered.forEach((item, index) => {
             const row = document.createElement('tr');
-            row.className = 'fade-in';
+            row.className = 'bp-fade-in';
             row.innerHTML = `
                 <td class="fw-bold">${index + 1}</td>
                 <td>${escapeHtml(item.substanceName)}</td>
@@ -398,7 +398,7 @@ document.addEventListener('DOMContentLoaded', function () {
             `;
             row.addEventListener('click', function (e) {
                 if (!e.target.closest('.delete-btn')) {
-                    this.classList.toggle('selected-row');
+                    this.classList.toggle('is-selected');
                 }
             });
             historyTableBody.appendChild(row);
@@ -624,14 +624,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function highlightRecentCalculations() {
         const rows = document.querySelectorAll('#historyTableBody tr');
-        rows.forEach(row => row.classList.remove('highlighted-row'));
+        rows.forEach(row => row.classList.remove('is-highlighted'));
         const count = Math.min(5, rows.length);
         for (let i = 0; i < count; i++) {
-            rows[i].classList.add('highlighted-row');
+            rows[i].classList.add('is-highlighted');
         }
         setTimeout(() => {
             document.querySelectorAll('#historyTableBody tr').forEach(row => {
-                row.classList.remove('highlighted-row');
+                row.classList.remove('is-highlighted');
             });
         }, 5000);
     }
@@ -665,12 +665,18 @@ document.addEventListener('DOMContentLoaded', function () {
         const existing = document.querySelector('.alert-dismissible');
         if (existing) existing.remove();
 
+        const isError = type === 'danger' || type === 'warning';
         const alert = document.createElement('div');
         alert.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
         alert.style.zIndex = '1050';
+        // role=alert / aria-live="assertive" — для предупреждений и ошибок,
+        // role=status / aria-live="polite" — для информационных сообщений.
+        alert.setAttribute('role', isError ? 'alert' : 'status');
+        alert.setAttribute('aria-live', isError ? 'assertive' : 'polite');
+        alert.setAttribute('aria-atomic', 'true');
         alert.innerHTML = `
             ${escapeHtml(message)}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
         `;
         document.body.appendChild(alert);
         setTimeout(() => {
