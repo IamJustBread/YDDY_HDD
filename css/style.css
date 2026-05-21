@@ -472,6 +472,20 @@ body.dark-theme select.bp-input {
     background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23e6efff'%3E%3Cpath d='M3 6l5 5 5-5z'/%3E%3C/svg%3E") !important;
 }
 
+/* Раскрытый список <option> не должен наследовать SVG-стрелку селекта. */
+select.bp-input option {
+    background-image: none !important;
+    background-color: var(--bp-bg-elev);
+    color: var(--bp-ink);
+    padding: 0.3rem 0.5rem;
+    font-family: var(--bp-font-sans);
+}
+
+select.bp-input option:checked {
+    background-color: var(--bp-accent-soft);
+    color: var(--bp-ink);
+}
+
 .bp-readout {
     background: var(--bp-accent-soft) !important;
     font-family: var(--bp-font-mono) !important;
