@@ -1253,11 +1253,306 @@ const munitionsData = [
         total_grams: 4500,
         effective_m: 10,
         note: "Термобарический выстрел для РПГ-7."
+    },
+
+    // ---------- NATO / Вьетнам / Залив / Ирак ----------
+
+    // Ручные гранаты
+    {
+        id: 14,
+        name: "V40",
+        full_name: "V40 mini fragmentation grenade",
+        category: "hand_grenade",
+        origin: "Нидерланды/USA",
+        explosive_id: 34,
+        filler_note: "Composition B",
+        filler_grams: 40,
+        total_grams: 136,
+        effective_m: 5,
+        delay_sec: 4.5,
+        note: "Сферическая мини-граната размером с мяч для гольфа, использовалась USSF во Вьетнаме."
+    },
+
+    // 40-мм гранаты
+    {
+        id: 70,
+        name: "40mm M406",
+        full_name: "M406 40 mm HE grenade",
+        category: "grenade_40mm",
+        origin: "USA",
+        explosive_id: 34,
+        filler_note: "Composition B",
+        filler_grams: 32,
+        total_grams: 230,
+        effective_m: 5,
+        note: "Базовая ОФ граната для гранатомёта M79/M203 (Вьетнам)."
+    },
+    {
+        id: 71,
+        name: "40mm M433",
+        full_name: "M433 40 mm HEDP grenade",
+        category: "grenade_40mm",
+        origin: "USA",
+        explosive_id: 34,
+        filler_note: "Composition B",
+        filler_grams: 45,
+        total_grams: 230,
+        effective_m: 5,
+        note: "Кумулятивно-осколочный выстрел (HEDP) для M203, поздний Вьетнам и далее."
+    },
+    {
+        id: 72,
+        name: "40mm M430",
+        full_name: "M430 40 mm HEDP linked",
+        category: "grenade_40mm",
+        origin: "USA",
+        explosive_id: 34,
+        filler_note: "Composition B",
+        filler_grams: 45,
+        total_grams: 348,
+        effective_m: 15,
+        note: "Ленточный выстрел для автоматического гранатомёта Mk 19. Залив/Ирак."
+    },
+
+    // Подрывные заряды
+    {
+        id: 26,
+        name: "Bangalore M1A2",
+        full_name: "M1A2 Bangalore torpedo (section)",
+        category: "demolition",
+        origin: "USA",
+        explosive_id: 15,
+        filler_note: "TNT (литой)",
+        filler_grams: 4080,
+        total_grams: 6240,
+        note: "Удлинённый заряд-секция для разминирования / разрушения проволочных заграждений (WWII → Ирак)."
+    },
+
+    // Авиабомбы (Вьетнам / Залив / Ирак)
+    {
+        id: 37,
+        name: "M117",
+        full_name: "M117 750 lb GP bomb",
+        category: "aerial_bomb",
+        origin: "USA",
+        explosive_id: 18,
+        filler_note: "Tritonal",
+        filler_grams: 178000,
+        total_grams: 340000,
+        note: "Рабочая лошадка авиации США во Вьетнаме (B-52 Arc Light), применялась и в Заливе."
+    },
+    {
+        id: 38,
+        name: "AN-M64",
+        full_name: "AN-M64 500 lb GP bomb",
+        category: "aerial_bomb",
+        origin: "USA",
+        explosive_id: 15,
+        filler_note: "TNT / Amatol / Composition B",
+        filler_grams: 120000,
+        total_grams: 240000,
+        note: "WWII–Вьетнам, заменена Mk 82."
+    },
+    {
+        id: 39,
+        name: "BLU-82 «Daisy Cutter»",
+        full_name: "BLU-82/B Commando Vault 15 000 lb bomb",
+        category: "aerial_bomb",
+        origin: "USA",
+        explosive_id: 7,
+        filler_note: "GSX slurry (NH₄NO₃ + Al + полистирол)",
+        filler_grams: 5715000,
+        total_grams: 6800000,
+        effective_m: 275,
+        note: "Гигантская «расчищающая» бомба для создания вертолётных площадок во Вьетнаме; применялась и в Заливе/Ираке."
+    },
+    {
+        id: 40,
+        name: "BLU-109",
+        full_name: "BLU-109/B hard-target penetrator",
+        category: "aerial_bomb",
+        origin: "USA",
+        explosive_id: 26,
+        filler_note: "PBXN-109",
+        filler_grams: 240000,
+        total_grams: 874000,
+        note: "Проникающая бомба для укреплённых целей. Применялась в «Буре в пустыне» и OIF."
+    },
+    {
+        id: 41,
+        name: "GBU-43/B MOAB",
+        full_name: "GBU-43/B Massive Ordnance Air Blast",
+        category: "aerial_bomb",
+        origin: "USA",
+        explosive_id: 34,
+        filler_note: "H-6 (RDX+TNT+Al)",
+        filler_grams: 8480000,
+        total_grams: 9818000,
+        effective_m: 140,
+        note: "«Мать всех бомб» (21 000 lb). Разработана к OIF, применена в Афганистане 2017."
+    },
+
+    // Кассетные суббоеприпасы
+    {
+        id: 80,
+        name: "BLU-3 «Pineapple»",
+        full_name: "BLU-3/B antipersonnel bomblet",
+        category: "submunition",
+        origin: "USA",
+        explosive_id: 34,
+        filler_note: "Cyclotol (RDX/TNT)",
+        filler_grams: 30,
+        total_grams: 770,
+        effective_m: 12,
+        note: "Кассетный осколочный бомблет с 250 стальными шариками. Вьетнам."
+    },
+    {
+        id: 81,
+        name: "BLU-26 «Guava»",
+        full_name: "BLU-26/B bomblet",
+        category: "submunition",
+        origin: "USA",
+        explosive_id: 34,
+        filler_note: "Composition B",
+        filler_grams: 280,
+        total_grams: 425,
+        effective_m: 9,
+        note: "Сферический бомблет размером с теннисный мяч из кассеты CBU-24. Массовое применение во Вьетнаме."
+    },
+    {
+        id: 82,
+        name: "BLU-97/B CEM",
+        full_name: "BLU-97/B Combined Effects Munition",
+        category: "submunition",
+        origin: "USA",
+        explosive_id: 34,
+        filler_note: "Cyclotol",
+        filler_grams: 287,
+        total_grams: 1540,
+        effective_m: 15,
+        note: "Суббоеприпас кассеты CBU-87/89/103, тройного действия (осколки + кумулятив + зажигание). Залив, Ирак."
+    },
+
+    // Артиллерия / минометы Вьетнама и далее
+    {
+        id: 47,
+        name: "M1 (105mm)",
+        full_name: "105 mm M1 HE projectile",
+        category: "artillery",
+        origin: "USA",
+        explosive_id: 15,
+        filler_note: "TNT",
+        filler_grams: 2180,
+        total_grams: 14970,
+        note: "Стандартный ОФ-снаряд для гаубицы M101/M102. WWII → Вьетнам → Ирак."
+    },
+    {
+        id: 48,
+        name: "M329 (107mm)",
+        full_name: "M329 4.2-inch mortar HE",
+        category: "mortar",
+        origin: "USA",
+        explosive_id: 34,
+        filler_note: "Composition B",
+        filler_grams: 4000,
+        total_grams: 12300,
+        note: "Тяжёлая 107-мм миномётная мина, рабочая лошадка во Вьетнаме."
+    },
+    {
+        id: 49,
+        name: "M106 (203mm)",
+        full_name: "8-inch M106 HE projectile",
+        category: "artillery",
+        origin: "USA",
+        explosive_id: 18,
+        filler_note: "TNT / Tritonal",
+        filler_grams: 16650,
+        total_grams: 92500,
+        note: "203-мм снаряд для гаубицы M110. Вьетнам и до 1990-х."
+    },
+
+    // Мины
+    {
+        id: 56,
+        name: "M21",
+        full_name: "M21 anti-tank mine",
+        category: "mine_at",
+        origin: "USA",
+        explosive_id: 34,
+        filler_note: "Composition H6",
+        filler_grams: 5000,
+        total_grams: 7800,
+        note: "Противотанковая мина с наклонным датчиком. Вьетнам."
+    },
+
+    // Реактивные / ATGM / SMAW
+    {
+        id: 65,
+        name: "M67 RR (90mm)",
+        full_name: "90 mm M371 HEAT for M67 recoilless rifle",
+        category: "rocket",
+        origin: "USA",
+        explosive_id: 34,
+        filler_note: "Composition B",
+        filler_grams: 430,
+        total_grams: 4200,
+        note: "Выстрел для 90-мм безоткатного орудия M67. Стандарт пехоты во Вьетнаме."
+    },
+    {
+        id: 66,
+        name: "M40 RR (106mm)",
+        full_name: "106 mm M344 HEAT for M40 recoilless rifle",
+        category: "rocket",
+        origin: "USA",
+        explosive_id: 34,
+        filler_note: "Composition B",
+        filler_grams: 1270,
+        total_grams: 7700,
+        note: "Выстрел для 106-мм безоткатного орудия M40. Вьетнам."
+    },
+    {
+        id: 67,
+        name: "BGM-71 TOW",
+        full_name: "BGM-71 TOW HEAT warhead",
+        category: "rocket",
+        origin: "USA",
+        explosive_id: 45,
+        filler_note: "Octol",
+        filler_grams: 2950,
+        total_grams: 25400,
+        note: "Тяжёлый ПТУР (Vietnam late → Iraq). Кумулятивная БЧ."
+    },
+    {
+        id: 68,
+        name: "AGM-114K",
+        full_name: "AGM-114K Hellfire II HEAT warhead",
+        category: "rocket",
+        origin: "USA",
+        explosive_id: 26,
+        filler_note: "PBXN-5 / PBXN-109",
+        filler_grams: 8000,
+        total_grams: 45400,
+        note: "Авиационная ПТУР для AH-64, MQ-1/9. Залив, OIF, OEF."
+    },
+    {
+        id: 69,
+        name: "Mk 153 SMAW NE",
+        full_name: "Mk 153 SMAW NE thermobaric rocket",
+        category: "rocket",
+        origin: "USA",
+        explosive_id: 52,
+        filler_note: "Термобарическая смесь (PBXIH-135)",
+        filler_grams: 1000,
+        total_grams: 6700,
+        effective_m: 10,
+        note: "Штурмовое оружие Корпуса морской пехоты США, термобарическая БЧ. OIF/Эль-Фаллуджа."
     }
 ];
 
 const munitionsCategoryLabels = {
     hand_grenade: "Ручная граната",
+    grenade_40mm: "40-мм граната",
+    submunition: "Кассетный суббоеприпас",
     demolition: "Подрывной заряд",
     aerial_bomb: "Авиабомба",
     artillery: "Арт. снаряд",
